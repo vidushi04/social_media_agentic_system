@@ -19,7 +19,7 @@ const getAI = (apiKey: string) => {
 
 export const runContentDeconstructor = async (apiKey: string, videoMetrics: any) => {
   const ai = getAI(apiKey);
-  const input = `Title: ${videoMetrics.title}\nCategory: ${videoMetrics.categoryName}`;
+  const input = `Title: ${videoMetrics.title}\nCategory: ${videoMetrics.categoryName}\nDescription: ${videoMetrics.description}\nTags: ${videoMetrics.tags?.join(', ')}`;
   
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',

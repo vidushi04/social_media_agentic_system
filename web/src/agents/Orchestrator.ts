@@ -70,6 +70,8 @@ export class MockOrchestrator {
           title: metrics.title,
           channel: metrics.channelTitle,
           category: metrics.categoryName,
+          description: metrics.description ? metrics.description.substring(0, 100) + '...' : '',
+          tags: metrics.tags,
         };
         this.setAgentStatus('interpreter', 'completed', output);
         

@@ -6,6 +6,8 @@ export interface VideoMetrics {
   likeCount: string;
   commentCount: string;
   categoryName: string;
+  description: string;
+  tags: string[];
 }
 
 export const extractVideoId = (url: string): string | null => {
@@ -70,6 +72,8 @@ export const fetchVideoMetrics = async (url: string, apiKey: string): Promise<Vi
     likeCount: statistics.likeCount || '0',
     commentCount: statistics.commentCount || '0',
     categoryName,
+    description: snippet.description || '',
+    tags: snippet.tags || [],
   };
 };
 
