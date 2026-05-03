@@ -1,6 +1,6 @@
 export type AgentStatus = 'idle' | 'running' | 'completed' | 'error';
 import { fetchVideoMetrics, fetchVideoComments, formatNumber } from '../utils/youtube';
-import { runContentDeconstructor, runAudienceSignalReader, runPatternDetector, runSkillCoach } from '../utils/llm';
+import { runContentDeconstructor, runAudienceSignalReader, runPatternDetector, runCoach } from '../utils/llm';
 
 export interface AgentState {
   id: string;
@@ -28,7 +28,7 @@ export class Orchestrator {
         deconstructor: { id: 'deconstructor', name: 'Content Deconstructor', status: 'idle' },
         audience: { id: 'audience', name: 'Audience Signal Reader', status: 'idle' },
         pattern: { id: 'pattern', name: 'Pattern Detector', status: 'idle' },
-        skill: { id: 'skill', name: 'Skill Coach', status: 'idle' },
+        skill: { id: 'skill', name: 'Coach', status: 'idle' },
       }
     };
   }
@@ -133,7 +133,7 @@ export class Orchestrator {
       // Conditional: Skill Coach
       if (patternData.actionable_pattern_found) {
         this.setAgentStatus('skill', 'running');
-        const skillData = await runSkillCoach(geminiKey, patternData);
+        const skillData = await runCoach(geminiKey, patternData);
         this.setAgentStatus('skill', 'completed', skillData);
         this.state.finalSkill = skillData;
         this.updateState({ ...this.state });

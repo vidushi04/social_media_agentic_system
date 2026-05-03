@@ -3,7 +3,7 @@ import {
   DECONSTRUCTOR_PROMPT,
   AUDIENCE_READER_PROMPT,
   PATTERN_DETECTOR_PROMPT,
-  SKILL_COACH_PROMPT
+  COACH_PROMPT
 } from '../agents/prompts';
 
 let aiInstance: GoogleGenAI | null = null;
@@ -94,7 +94,7 @@ Audience Output: ${JSON.stringify(audienceData)}
   return JSON.parse(response.text || '{}');
 };
 
-export const runSkillCoach = async (apiKey: string, patternData: any) => {
+export const runCoach = async (apiKey: string, patternData: any) => {
   const ai = getAI(apiKey);
   const input = JSON.stringify(patternData);
   
@@ -102,7 +102,7 @@ export const runSkillCoach = async (apiKey: string, patternData: any) => {
     model: 'gemini-2.5-flash',
     contents: input,
     config: {
-      systemInstruction: SKILL_COACH_PROMPT,
+      systemInstruction: COACH_PROMPT,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
