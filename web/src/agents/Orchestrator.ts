@@ -1,5 +1,6 @@
 export type AgentStatus = 'idle' | 'running' | 'completed' | 'error';
-import { fetchVideoMetrics, formatNumber } from '../utils/youtube';
+import { fetchVideoMetrics, fetchVideoComments, formatNumber } from '../utils/youtube';
+import { runContentDeconstructor, runAudienceSignalReader, runPatternDetector, runSkillCoach } from '../utils/llm';
 
 export interface AgentState {
   id: string;
@@ -13,32 +14,7 @@ export interface OrchestratorState {
   finalSkill?: any;
 }
 
-// Mock Data Payloads (for agents pending LLM integration)
-const mockDeconstructorOutput = {
-  hook_type: "direct_address",
-  pacing_style: "fast_cuts",
-  cta_placement: "end_screen",
-  cta_specificity: "generic"
-};
-
-const mockAudienceOutput = {
-  signal_type: "Emerging Theme",
-  observation: "In your last 4 videos, 7 comments asked about your specific Figma workflow.",
-  confidence: "Strong"
-};
-
-const mockPatternOutput = {
-  pattern_type: "Weakness",
-  observation: "In 5 of your last 8 videos, the end screen CTA uses a generic 'Subscribe for more' phrasing.",
-  craft_element: "CTA specificity",
-  actionable_pattern_found: true
-};
-
-const mockSkillOutput = {
-  skill: "Contextual CTA",
-  why_it_matters: "Tying the call-to-action to specific value delivered in the video improves conversion.",
-  try_this: "In your next video, replace 'Subscribe for more' with a CTA that previews the specific topic of your next upload."
-};
+// No mock payloads, using real LLM
 
 export class MockOrchestrator {
   private updateState: (state: OrchestratorState) => void;
@@ -63,7 +39,7 @@ export class MockOrchestrator {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async processUrl(url: string, apiKey: string) {
+  async processUrl(url: string, youtubeKey: string, geminiKey: string) {
     // Reset state
     Object.keys(this.state.agents).forEach(key => {
       this.state.agents[key].status = 'idle';
@@ -77,12 +53,16 @@ export class MockOrchestrator {
     this.setAgentStatus('interpreter', 'running');
     this.setAgentStatus('audience', 'running');
 
-    let interpreterPromise: Promise<void>;
-    if (!apiKey) {
-      this.setAgentStatus('interpreter', 'error', { error: 'API Key is required.' });
-      interpreterPromise = Promise.resolve();
+    let interpreterPromise: Promise<any>;
+    let metricsData: any = null;
+    let commentsData: string[] = [];
+
+    if (!youtubeKey) {
+      this.setAgentStatus('interpreter', 'error', { error: 'YouTube API Key is required.' });
+      interpreterPromise = Promise.reject('No YouTube Key');
     } else {
-      interpreterPromise = fetchVideoMetrics(url, apiKey).then(metrics => {
+      interpreterPromise = fetchVideoMetrics(url, youtubeKey).then(async (metrics) => {
+        metricsData = metrics;
         const output = {
           views: `${formatNumber(metrics.viewCount)}`,
           likes: `${formatNumber(metrics.likeCount)}`,
@@ -90,33 +70,73 @@ export class MockOrchestrator {
           title: metrics.title,
           channel: metrics.channelTitle,
           category: metrics.categoryName,
-          key_signal: "Strong hook retention, but sharp drop-off at the end screen. (Mock signal overlay on real data)",
-          anomaly: true
         };
         this.setAgentStatus('interpreter', 'completed', output);
+        
+        // Also fetch comments for the Audience Signal Reader
+        commentsData = await fetchVideoComments(url, youtubeKey);
+        return output;
       }).catch(err => {
         this.setAgentStatus('interpreter', 'error', { error: err.message });
+        throw err;
       });
     }
 
-    await Promise.all([
-      this.delay(1500).then(() => this.setAgentStatus('deconstructor', 'completed', mockDeconstructorOutput)),
-      interpreterPromise,
-      this.delay(1200).then(() => this.setAgentStatus('audience', 'completed', mockAudienceOutput)),
-    ]);
+    let deconstructorPromise: Promise<any>;
+    let audiencePromise: Promise<any>;
 
-    // Checkpoint: Pattern Detector waits for the first 3
-    this.setAgentStatus('pattern', 'running');
-    await this.delay(1800);
-    this.setAgentStatus('pattern', 'completed', mockPatternOutput);
+    if (!geminiKey) {
+      this.setAgentStatus('deconstructor', 'error', { error: 'Gemini API Key is required.' });
+      this.setAgentStatus('audience', 'error', { error: 'Gemini API Key is required.' });
+      deconstructorPromise = Promise.reject('No Gemini Key');
+      audiencePromise = Promise.reject('No Gemini Key');
+    } else {
+      // The deconstructor and audience reader need data from the interpreter phase first in this real setup
+      // So we must wait for interpreterPromise to resolve to get the title, category, and comments.
+      deconstructorPromise = interpreterPromise.then(() => {
+        return runContentDeconstructor(geminiKey, metricsData).then(output => {
+          this.setAgentStatus('deconstructor', 'completed', output);
+          return output;
+        }).catch(err => {
+          this.setAgentStatus('deconstructor', 'error', { error: err.message });
+          throw err;
+        });
+      });
 
-    // Conditional: Skill Coach
-    if (mockPatternOutput.actionable_pattern_found) {
-      this.setAgentStatus('skill', 'running');
-      await this.delay(1500);
-      this.setAgentStatus('skill', 'completed', mockSkillOutput);
-      this.state.finalSkill = mockSkillOutput;
-      this.updateState({ ...this.state });
+      audiencePromise = interpreterPromise.then(() => {
+        return runAudienceSignalReader(geminiKey, commentsData).then(output => {
+          this.setAgentStatus('audience', 'completed', output);
+          return output;
+        }).catch(err => {
+          this.setAgentStatus('audience', 'error', { error: err.message });
+          throw err;
+        });
+      });
+    }
+
+    try {
+      const [deconstructorData, interpreterData] = await Promise.all([
+        deconstructorPromise,
+        interpreterPromise,
+        audiencePromise
+      ]);
+
+      // Checkpoint: Pattern Detector
+      this.setAgentStatus('pattern', 'running');
+      const patternData = await runPatternDetector(geminiKey, deconstructorData, interpreterData);
+      this.setAgentStatus('pattern', 'completed', patternData);
+
+      // Conditional: Skill Coach
+      if (patternData.actionable_pattern_found) {
+        this.setAgentStatus('skill', 'running');
+        const skillData = await runSkillCoach(geminiKey, patternData);
+        this.setAgentStatus('skill', 'completed', skillData);
+        this.state.finalSkill = skillData;
+        this.updateState({ ...this.state });
+      }
+
+    } catch (e) {
+      console.error("Orchestration halted due to agent error", e);
     }
   }
 

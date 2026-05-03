@@ -7,7 +7,8 @@ import { Dashboard } from './components/Dashboard';
 
 function App() {
   const [url, setUrl] = useState('');
-  const [apiKey, setApiKey] = useState(localStorage.getItem('YOUTUBE_API_KEY') || '');
+  const [youtubeKey, setYoutubeKey] = useState(localStorage.getItem('YOUTUBE_API_KEY') || '');
+  const [geminiKey, setGeminiKey] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
   const [isDevModeOpen, setIsDevModeOpen] = useState(false);
   const [orchestratorState, setOrchestratorState] = useState<OrchestratorState | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -23,13 +24,14 @@ function App() {
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url.trim() || !apiKey.trim()) return;
+    if (!url.trim() || !youtubeKey.trim() || !geminiKey.trim()) return;
     
-    localStorage.setItem('YOUTUBE_API_KEY', apiKey);
+    localStorage.setItem('YOUTUBE_API_KEY', youtubeKey);
+    localStorage.setItem('GEMINI_API_KEY', geminiKey);
 
     setIsProcessing(true);
     setIsDevModeOpen(true); // Auto-open dev mode to show the process
-    await orchestratorRef.current?.processUrl(url, apiKey);
+    await orchestratorRef.current?.processUrl(url, youtubeKey, geminiKey);
     setIsProcessing(false);
   };
 
@@ -75,21 +77,35 @@ function App() {
                     disabled={isProcessing}
                   />
                 </div>
-                <button type="submit" className="btn-primary" disabled={isProcessing || !url.trim() || !apiKey.trim()}>
+                <button type="submit" className="btn-primary" disabled={isProcessing || !url.trim() || !youtubeKey.trim() || !geminiKey.trim()}>
                   {isProcessing ? 'Analyzing...' : <><PlayCircle size={18} /> Analyze</>}
                 </button>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 0.5rem' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>YouTube API Key <span style={{color: 'var(--error)'}}>*</span>:</label>
-                <input 
-                  type="password" 
-                  required
-                  value={apiKey} 
-                  onChange={e => setApiKey(e.target.value)}
-                  placeholder="Enter your API Key to fetch live data" 
-                  style={{ background: 'transparent', border: '1px solid var(--glass-border)', padding: '0.3rem 0.5rem', borderRadius: '4px', color: 'var(--text-secondary)', fontSize: '0.85rem', flex: 1 }}
-                  disabled={isProcessing}
-                />
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>YouTube API Key <span style={{color: 'var(--error)'}}>*</span>:</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={youtubeKey} 
+                    onChange={e => setYoutubeKey(e.target.value)}
+                    placeholder="Enter YouTube Key" 
+                    style={{ background: 'transparent', border: '1px solid var(--glass-border)', padding: '0.3rem 0.5rem', borderRadius: '4px', color: 'var(--text-secondary)', fontSize: '0.85rem', width: '100%' }}
+                    disabled={isProcessing}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Gemini API Key <span style={{color: 'var(--error)'}}>*</span>:</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={geminiKey} 
+                    onChange={e => setGeminiKey(e.target.value)}
+                    placeholder="Enter Gemini Key" 
+                    style={{ background: 'transparent', border: '1px solid var(--glass-border)', padding: '0.3rem 0.5rem', borderRadius: '4px', color: 'var(--text-secondary)', fontSize: '0.85rem', width: '100%' }}
+                    disabled={isProcessing}
+                  />
+                </div>
               </div>
             </div>
           </form>

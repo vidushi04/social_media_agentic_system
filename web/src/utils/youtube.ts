@@ -73,6 +73,26 @@ export const fetchVideoMetrics = async (url: string, apiKey: string): Promise<Vi
   };
 };
 
+export const fetchVideoComments = async (url: string, apiKey: string): Promise<string[]> => {
+  const videoId = extractVideoId(url);
+  if (!videoId) return [];
+
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&key=${apiKey}&maxResults=30`
+    );
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    if (!data.items) return [];
+
+    return data.items.map((item: any) => item.snippet.topLevelComment.snippet.textOriginal);
+  } catch (e) {
+    console.warn('Failed to fetch comments', e);
+    return [];
+  }
+};
+
 export const formatNumber = (numStr: string): string => {
   const num = parseInt(numStr, 10);
   if (isNaN(num)) return numStr;
