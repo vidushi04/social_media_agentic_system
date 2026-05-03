@@ -103,7 +103,9 @@ export class MockOrchestrator {
         });
       });
 
-      audiencePromise = interpreterPromise.then(() => {
+      audiencePromise = interpreterPromise.then(async () => {
+        // Stagger this request by 2 seconds to avoid hitting the Gemini Free Tier burst rate limit (429 error)
+        await this.delay(2000); 
         return runAudienceSignalReader(geminiKey, commentsData).then(output => {
           this.setAgentStatus('audience', 'completed', output);
           return output;
