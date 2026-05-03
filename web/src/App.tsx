@@ -4,14 +4,18 @@ import type { OrchestratorState } from './agents/Orchestrator';
 import { Orchestrator } from './agents/Orchestrator';
 import { DevMode } from './components/DevMode';
 import { Dashboard } from './components/Dashboard';
+import { SettingsModal } from './components/SettingsModal';
 
 function App() {
   const [url, setUrl] = useState('');
   const [youtubeKey, setYoutubeKey] = useState(localStorage.getItem('YOUTUBE_API_KEY') || '');
   const [geminiKey, setGeminiKey] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
   const [isDevModeOpen, setIsDevModeOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [orchestratorState, setOrchestratorState] = useState<OrchestratorState | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [mockMode, setMockMode] = useState(localStorage.getItem('MOCK_MODE') === 'true');
   
   // Keep orchestrator instance
   const orchestratorRef = useRef<Orchestrator | null>(null);
@@ -24,15 +28,28 @@ function App() {
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url.trim() || !youtubeKey.trim() || !geminiKey.trim()) return;
-    
-    localStorage.setItem('YOUTUBE_API_KEY', youtubeKey);
-    localStorage.setItem('GEMINI_API_KEY', geminiKey);
+    if (!url.trim()) return;
 
+    if (!mockMode && (!youtubeKey.trim() || !geminiKey.trim())) {
+      setIsSettingsOpen(true);
+      return;
+    }
+
+    setErrorMsg('');
     setIsProcessing(true);
-    setIsDevModeOpen(true); // Auto-open dev mode to show the process
-    await orchestratorRef.current?.processUrl(url, youtubeKey, geminiKey);
+    try {
+      await orchestratorRef.current?.processUrl(url, youtubeKey, geminiKey, mockMode);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'An error occurred while processing the video. Please check the URL.');
+    }
     setIsProcessing(false);
+  };
+
+  const getActiveAgentName = () => {
+    if (!orchestratorState) return 'Initializing...';
+    const runningAgent = Object.values(orchestratorState.agents).find(a => a.status === 'running');
+    if (runningAgent) return `${runningAgent.name} is working...`;
+    return 'Finalizing analysis...';
   };
 
   return (
@@ -44,21 +61,26 @@ function App() {
               <Video color="white" size={24} />
             </div>
             <h1 style={{ margin: 0, fontSize: '1.5rem', background: 'none', WebkitTextFillColor: 'var(--text-primary)' }}>
-              Content Mirror
+              Agentic Booster
             </h1>
           </div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            Zero-to-1000 Followers System
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              Content Packaging Intelligence
+            </div>
+            <button className="btn-icon" onClick={() => setIsSettingsOpen(true)} title="API Settings">
+              <Settings2 size={20} color="var(--text-secondary)" />
+            </button>
           </div>
         </header>
 
         <main>
           <div style={{ textAlign: 'center', marginBottom: '4rem', marginTop: '2rem' }}>
-            <h1 style={{ fontSize: '4rem', marginBottom: '1rem', letterSpacing: '-0.02em' }}>
-              Level up your<br />creator journey.
+            <h1 style={{ fontSize: '4rem', marginBottom: '1rem', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              Deconstruct your content.<br />Understand your audience.
             </h1>
-            <p style={{ fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', color: 'var(--text-secondary)' }}>
-              Paste your latest YouTube video URL below. Our agentic system will analyze your craft, interpret your metrics, and teach you the next micro-skill.
+            <p style={{ fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', color: 'var(--text-secondary)', marginTop: '1rem' }}>
+              Paste a YouTube URL below. Our multi-agent pipeline will reverse-engineer the psychology of your hook and prescribe an actionable micro-skill.
             </p>
           </div>
 
@@ -77,42 +99,43 @@ function App() {
                     disabled={isProcessing}
                   />
                 </div>
-                <button type="submit" className="btn-primary" disabled={isProcessing || !url.trim() || !youtubeKey.trim() || !geminiKey.trim()}>
+                <button type="submit" className="btn-primary" disabled={isProcessing || !url.trim()}>
                   {isProcessing ? 'Analyzing...' : <><PlayCircle size={18} /> Analyze</>}
                 </button>
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>YouTube API Key <span style={{color: 'var(--error)'}}>*</span>:</label>
-                  <input 
-                    type="password" 
-                    required
-                    value={youtubeKey} 
-                    onChange={e => setYoutubeKey(e.target.value)}
-                    placeholder="Enter YouTube Key" 
-                    style={{ background: 'transparent', border: '1px solid var(--glass-border)', padding: '0.3rem 0.5rem', borderRadius: '4px', color: 'var(--text-secondary)', fontSize: '0.85rem', width: '100%' }}
-                    disabled={isProcessing}
-                  />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Gemini API Key <span style={{color: 'var(--error)'}}>*</span>:</label>
-                  <input 
-                    type="password" 
-                    required
-                    value={geminiKey} 
-                    onChange={e => setGeminiKey(e.target.value)}
-                    placeholder="Enter Gemini Key" 
-                    style={{ background: 'transparent', border: '1px solid var(--glass-border)', padding: '0.3rem 0.5rem', borderRadius: '4px', color: 'var(--text-secondary)', fontSize: '0.85rem', width: '100%' }}
-                    disabled={isProcessing}
-                  />
-                </div>
-              </div>
             </div>
+
+            {errorMsg && (
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--error)', color: 'var(--error)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', textAlign: 'left', animation: 'fadeIn 0.3s ease-out' }}>
+                <strong>Error:</strong> {errorMsg}
+              </div>
+            )}
+
+            {!isProcessing && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>Quick Try:</span>
+                <button type="button" className="chip" onClick={() => setUrl('https://www.youtube.com/watch?v=iGeXGdYE7UE')}>Tech Review (MKBHD)</button>
+                <button type="button" className="chip" onClick={() => setUrl('https://www.youtube.com/watch?v=k8A0qPG0nag')}>EV Review</button>
+                <button type="button" className="chip" onClick={() => setUrl('https://www.youtube.com/watch?v=0e3GPea1Tyg')}>MrBeast</button>
+              </div>
+            )}
+
+            {isProcessing && (
+              <div className="loading-state glass-panel" style={{ marginTop: '2rem', animation: 'fadeIn 0.3s ease-out' }}>
+                <div className="spinner"></div>
+                <h3 style={{ margin: '1rem 0 0.5rem', color: 'var(--accent-primary)', fontSize: '1.2rem' }}>Agentic Pipeline Active</h3>
+                <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '1rem' }}>{getActiveAgentName()}</p>
+              </div>
+            )}
           </form>
 
-          {orchestratorState?.finalSkill && (
+          {!isProcessing && orchestratorState?.finalSkill && (
             <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-              <Dashboard skillData={orchestratorState.finalSkill} />
+              <Dashboard 
+                skillData={orchestratorState.finalSkill} 
+                patternData={orchestratorState.agents.pattern.output} 
+                onReset={() => { setUrl(''); setErrorMsg(''); setOrchestratorState(null); }}
+              />
             </div>
           )}
         </main>
@@ -126,6 +149,17 @@ function App() {
         isOpen={isDevModeOpen} 
         onClose={() => setIsDevModeOpen(false)} 
         state={orchestratorState} 
+      />
+
+      <SettingsModal 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        youtubeKey={youtubeKey}
+        setYoutubeKey={setYoutubeKey}
+        geminiKey={geminiKey}
+        setGeminiKey={setGeminiKey}
+        mockMode={mockMode}
+        setMockMode={setMockMode}
       />
     </>
   );

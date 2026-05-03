@@ -39,7 +39,7 @@ export class Orchestrator {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async processUrl(url: string, youtubeKey: string, geminiKey: string) {
+  async processUrl(url: string, youtubeKey: string, geminiKey: string, mockMode: boolean = false) {
     // Reset state
     Object.keys(this.state.agents).forEach(key => {
       this.state.agents[key].status = 'idle';
@@ -52,6 +52,27 @@ export class Orchestrator {
     this.setAgentStatus('deconstructor', 'running');
     this.setAgentStatus('interpreter', 'running');
     this.setAgentStatus('audience', 'running');
+
+    if (mockMode) {
+      await this.delay(1500);
+      this.setAgentStatus('interpreter', 'completed', { views: "1.2M", title: "Mock Video" });
+      this.setAgentStatus('deconstructor', 'completed', { hook_type: "Curiosity Gap" });
+      this.setAgentStatus('audience', 'completed', { signal_type: "Positive" });
+      
+      this.setAgentStatus('pattern', 'running');
+      await this.delay(1500);
+      const patternData = { actionable_pattern_found: true, pattern_type: "Weakness", craft_element: "Pacing", observation: "Viewers are dropping off during the mid-roll explanation." };
+      this.setAgentStatus('pattern', 'completed', patternData);
+
+      this.setAgentStatus('skill', 'running');
+      await this.delay(1500);
+      const skillData = { skill: "Dynamic Mid-roll Transitions", why_it_matters: "Keeps retention high during naturally slow sections.", try_this: "Add B-roll or a visual pattern interrupt right as you begin your explanation." };
+      this.setAgentStatus('skill', 'completed', skillData);
+      
+      this.state.finalSkill = skillData;
+      this.updateState({ ...this.state });
+      return;
+    }
 
     let interpreterPromise: Promise<any>;
     let metricsData: any = null;
@@ -139,8 +160,9 @@ export class Orchestrator {
         this.updateState({ ...this.state });
       }
 
-    } catch (e) {
+    } catch (e: any) {
       console.error("Orchestration halted due to agent error", e);
+      throw new Error(e.message || 'Failed to process URL. Please check if the video exists and is public.');
     }
   }
 
