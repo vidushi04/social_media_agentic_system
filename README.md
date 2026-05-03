@@ -40,6 +40,3 @@ Open your browser and navigate to `http://localhost:5174/` (or the port shown in
 1. Paste a link to one of your YouTube videos.
 2. Click **Analyze**.
 3. *(Optional)* Click the gear icon in the bottom right corner to open **Dev Mode** and watch the Intelligence Engine work in real-time!
-
----
-*Built as a prototype for the Agentic Coding course.*
