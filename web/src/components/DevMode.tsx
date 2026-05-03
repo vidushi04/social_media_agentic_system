@@ -23,7 +23,7 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state }) => {
       </div>
 
       <div style={{ marginBottom: '2rem' }}>
-        <p style={{ fontSize: '0.9rem' }}>
+        <p style={{ fontSize: '0.9rem', color: 'var(--body)' }}>
           Real-time visualization of the multi-agent orchestration engine.
         </p>
       </div>
@@ -31,12 +31,12 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state }) => {
       {state && Object.values(state.agents).map((agent) => (
         <div key={agent.id} className={`agent-card ${agent.id === 'interpreter' ? 'pipeline-stage' : ''}`}>
           <div className="agent-header">
-            {agent.status === 'running' && (agent.id === 'interpreter' ? <Database size={16} className="animate-pulse-glow" style={{ color: 'var(--accent-secondary)' }} /> : <Activity size={16} className="animate-pulse-glow" style={{ color: 'var(--warning)' }} />)}
-            {agent.status === 'completed' && <CheckCircle2 size={16} style={{ color: 'var(--success)' }} />}
-            {agent.status === 'idle' && <Clock size={16} style={{ color: 'var(--text-muted)' }} />}
-            <span style={{ color: 'var(--text-primary)' }}>{agent.name}</span>
+            {agent.status === 'running' && (agent.id === 'interpreter' ? <Database size={16} style={{ color: 'var(--focus-outer)' }} /> : <Activity size={16} style={{ color: '#854d0e' }} />)}
+            {agent.status === 'completed' && <CheckCircle2 size={16} style={{ color: 'var(--success-deep)' }} />}
+            {agent.status === 'idle' && <Clock size={16} style={{ color: 'var(--mute)' }} />}
+            <span style={{ color: 'var(--ink)' }}>{agent.name}</span>
             {agent.id === 'interpreter' && (
-              <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent-secondary)', borderRadius: '4px', marginLeft: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+              <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', background: '#eef2ff', color: 'var(--focus-outer)', borderRadius: '4px', marginLeft: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px', border: '1px solid #c7d2fe' }}>
                 Data Pipeline
               </span>
             )}
@@ -47,7 +47,7 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state }) => {
           
           {agent.output && (
             <div style={{ marginTop: '1rem' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>JSON PAYLOAD</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--mute)', marginBottom: '0.25rem' }}>JSON PAYLOAD</div>
               <pre className="code-block">
                 {JSON.stringify(agent.output, null, 2)}
               </pre>
@@ -57,7 +57,7 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state }) => {
       ))}
       
       {!state && (
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '4rem' }}>
+        <div style={{ textAlign: 'center', color: 'var(--mute)', marginTop: '4rem' }}>
           <Activity size={32} style={{ opacity: 0.5, marginBottom: '1rem' }} />
           <p>Awaiting Trigger Event...</p>
         </div>
