@@ -1,6 +1,6 @@
 import React from 'react';
 import type { OrchestratorState } from '../agents/Orchestrator';
-import { Terminal, Activity, CheckCircle2, Clock } from 'lucide-react';
+import { Terminal, Activity, CheckCircle2, Clock, Database } from 'lucide-react';
 
 interface DevModeProps {
   isOpen: boolean;
@@ -29,12 +29,17 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state }) => {
       </div>
 
       {state && Object.values(state.agents).map((agent) => (
-        <div key={agent.id} className="agent-card">
+        <div key={agent.id} className={`agent-card ${agent.id === 'interpreter' ? 'pipeline-stage' : ''}`}>
           <div className="agent-header">
-            {agent.status === 'running' && <Activity size={16} className="animate-pulse-glow" style={{ color: 'var(--warning)' }} />}
+            {agent.status === 'running' && (agent.id === 'interpreter' ? <Database size={16} className="animate-pulse-glow" style={{ color: 'var(--accent-secondary)' }} /> : <Activity size={16} className="animate-pulse-glow" style={{ color: 'var(--warning)' }} />)}
             {agent.status === 'completed' && <CheckCircle2 size={16} style={{ color: 'var(--success)' }} />}
             {agent.status === 'idle' && <Clock size={16} style={{ color: 'var(--text-muted)' }} />}
             <span style={{ color: 'var(--text-primary)' }}>{agent.name}</span>
+            {agent.id === 'interpreter' && (
+              <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent-secondary)', borderRadius: '4px', marginLeft: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                Data Pipeline
+              </span>
+            )}
             <span style={{ marginLeft: 'auto' }} className={`agent-status ${agent.status}`}>
               {agent.status}
             </span>

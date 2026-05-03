@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Search, Settings2, PlayCircle, Video } from 'lucide-react';
 import type { OrchestratorState } from './agents/Orchestrator';
-import { MockOrchestrator } from './agents/Orchestrator';
+import { Orchestrator } from './agents/Orchestrator';
 import { DevMode } from './components/DevMode';
 import { Dashboard } from './components/Dashboard';
 
@@ -14,10 +14,10 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   
   // Keep orchestrator instance
-  const orchestratorRef = useRef<MockOrchestrator | null>(null);
+  const orchestratorRef = useRef<Orchestrator | null>(null);
 
   if (!orchestratorRef.current) {
-    orchestratorRef.current = new MockOrchestrator((newState) => {
+    orchestratorRef.current = new Orchestrator((newState) => {
       setOrchestratorState(newState);
     });
   }

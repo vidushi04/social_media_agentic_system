@@ -220,6 +220,11 @@ button.btn-secondary:hover {
   margin-bottom: 1rem;
 }
 
+.agent-card.pipeline-stage {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px dashed rgba(59, 130, 246, 0.3);
+}
+
 .agent-header {
   display: flex;
   align-items: center;

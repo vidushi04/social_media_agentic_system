@@ -16,7 +16,7 @@ export interface OrchestratorState {
 
 // No mock payloads, using real LLM
 
-export class MockOrchestrator {
+export class Orchestrator {
   private updateState: (state: OrchestratorState) => void;
   private state: OrchestratorState;
 
@@ -24,8 +24,8 @@ export class MockOrchestrator {
     this.updateState = updateState;
     this.state = {
       agents: {
+        interpreter: { id: 'interpreter', name: 'Data Harvester', status: 'idle' },
         deconstructor: { id: 'deconstructor', name: 'Content Deconstructor', status: 'idle' },
-        interpreter: { id: 'interpreter', name: 'Performance Interpreter', status: 'idle' },
         audience: { id: 'audience', name: 'Audience Signal Reader', status: 'idle' },
         pattern: { id: 'pattern', name: 'Pattern Detector', status: 'idle' },
         skill: { id: 'skill', name: 'Skill Coach', status: 'idle' },
