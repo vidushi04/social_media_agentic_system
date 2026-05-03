@@ -119,7 +119,7 @@ export class MockOrchestrator {
     }
 
     try {
-      const [deconstructorData, interpreterData] = await Promise.all([
+      const [deconstructorData, interpreterData, audienceData] = await Promise.all([
         deconstructorPromise,
         interpreterPromise,
         audiencePromise
@@ -127,7 +127,7 @@ export class MockOrchestrator {
 
       // Checkpoint: Pattern Detector
       this.setAgentStatus('pattern', 'running');
-      const patternData = await runPatternDetector(geminiKey, deconstructorData, interpreterData);
+      const patternData = await runPatternDetector(geminiKey, deconstructorData, interpreterData, audienceData);
       this.setAgentStatus('pattern', 'completed', patternData);
 
       // Conditional: Skill Coach

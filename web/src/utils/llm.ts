@@ -65,11 +65,12 @@ export const runAudienceSignalReader = async (apiKey: string, comments: string[]
   return JSON.parse(response.text || '{}');
 };
 
-export const runPatternDetector = async (apiKey: string, deconstructorData: any, performanceData: any) => {
+export const runPatternDetector = async (apiKey: string, deconstructorData: any, performanceData: any, audienceData: any) => {
   const ai = getAI(apiKey);
   const input = `
 Deconstructor Output: ${JSON.stringify(deconstructorData)}
 Performance Output: ${JSON.stringify(performanceData)}
+Audience Output: ${JSON.stringify(audienceData)}
   `;
   
   const response = await ai.models.generateContent({
