@@ -232,21 +232,22 @@ button.btn-secondary:hover {
 .dev-overlay {
   position: fixed;
   top: 0;
+  left: 0;
   right: 0;
   bottom: 0;
-  width: 400px;
-  background: var(--canvas);
-  border-left: 1px solid var(--hairline);
+  width: 100vw;
+  height: 100vh;
+  background: var(--charcoal, #25282b);
   z-index: 1000;
-  padding: 32px;
+  padding: 64px 32px;
   overflow-y: auto;
-  transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: -4px 0 24px rgba(0,0,0,0.05);
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--on-dark);
 }
 
 .dev-overlay.open {
-  transform: translateX(0);
+  transform: translateY(0);
 }
 
 .dev-toggle {
@@ -273,44 +274,127 @@ button.btn-secondary:hover {
 }
 
 .agent-card {
-  background: var(--surface-card);
-  border-radius: var(--rounded-md);
-  padding: 16px;
-  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--rounded-card, 6px);
+  padding: 24px;
+  width: 300px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
 }
 
-.agent-card.pipeline-stage {
-  border: 1px solid var(--hairline);
+.agent-card.running {
+  border-color: var(--primary);
+  box-shadow: 0 0 15px rgba(230, 0, 0, 0.3);
+}
+
+.agent-card.completed {
+  background: var(--canvas);
+  color: var(--ink);
 }
 
 .agent-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: var(--ink);
+  margin-bottom: 12px;
+  font-weight: 800;
   font-size: 16px;
+  text-transform: uppercase;
+  color: inherit;
+}
+
+.agent-card.completed .agent-header {
+  color: var(--ink);
+}
+
+.agent-card.completed p, .agent-card.completed span {
+  color: var(--body);
 }
 
 .agent-status {
   font-size: 12px;
   padding: 4px 12px;
-  border-radius: var(--rounded-full);
-  background: var(--secondary-bg);
-  color: var(--ink);
-  font-weight: 500;
+  border-radius: var(--rounded-pill, 60px);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--disabled, #bebebe);
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
-.agent-status.running {
-  background: #fef08a;
-  color: #854d0e;
+.agent-card.running .agent-status {
+  background: var(--primary);
+  color: var(--on-dark);
 }
 
-.agent-status.completed {
-  background: var(--success-pale);
-  color: var(--success-deep);
+.agent-card.completed .agent-status {
+  background: var(--success, #103c25);
+  color: var(--on-dark);
 }
+
+.pipeline-graph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 64px;
+  margin-top: 48px;
+  position: relative;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 128px;
+}
+
+.pipeline-row {
+  display: flex;
+  justify-content: center;
+  gap: 64px;
+  width: 100%;
+  position: relative;
+}
+
+/* Graph Edges */
+.edge {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 3;
+}
+
+.edge.active {
+  background: var(--primary);
+}
+
+.edge-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(255, 255, 255, 0.1);
+  transition: border-top-color 0.3s ease;
+}
+
+.edge-arrow.active::after {
+  border-top-color: var(--primary);
+}
+
+/* 1 to 2 Split */
+.split-vertical-top { width: 2px; height: 32px; top: -64px; left: 50%; transform: translateX(-50%); }
+.split-horizontal { width: 366px; height: 2px; top: -32px; left: 50%; transform: translateX(-50%); }
+.split-vertical-left { width: 2px; height: 32px; top: -32px; left: calc(50% - 182px); transform: translateX(-50%); }
+.split-vertical-right { width: 2px; height: 32px; top: -32px; left: calc(50% + 182px); transform: translateX(-50%); }
+
+/* 2 to 1 Merge */
+.merge-vertical-left { width: 2px; height: 32px; top: -64px; left: calc(50% - 182px); transform: translateX(-50%); }
+.merge-vertical-right { width: 2px; height: 32px; top: -64px; left: calc(50% + 182px); transform: translateX(-50%); }
+.merge-horizontal { width: 366px; height: 2px; top: -32px; left: 50%; transform: translateX(-50%); }
+.merge-vertical-bottom { width: 2px; height: 32px; top: -32px; left: 50%; transform: translateX(-50%); }
+
+/* 1 to 1 Direct */
+.direct-vertical { width: 2px; height: 64px; top: -64px; left: 50%; transform: translateX(-50%); }
 
 .code-block {
   background: var(--canvas);

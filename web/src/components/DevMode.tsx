@@ -1,6 +1,6 @@
 import React from 'react';
-import type { OrchestratorState } from '../agents/Orchestrator';
-import { Terminal, Activity, CheckCircle2, Clock, Database } from 'lucide-react';
+import type { OrchestratorState, AgentState } from '../agents/Orchestrator';
+import { Terminal, Database, Activity, CheckCircle2, Clock, Users, Search, BrainCircuit, Target, X } from 'lucide-react';
 
 interface DevModeProps {
   isOpen: boolean;
@@ -8,58 +8,162 @@ interface DevModeProps {
   state: OrchestratorState | null;
 }
 
+const renderAgentOutput = (agentId: string, output: any) => {
+  if (!output) return null;
+  
+  switch (agentId) {
+    case 'data_collector':
+      return (
+        <div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: 'var(--on-dark)' }}>
+            Extracted metadata for <strong>{output.title}</strong> by <strong>{output.channel}</strong>.
+          </p>
+          <div style={{ fontSize: '13px', color: 'var(--disabled)' }}>
+            Processed {output.views} views, {output.likes} likes, and sampled top comments.
+          </div>
+        </div>
+      );
+    case 'deconstructor':
+      return (
+        <div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: 'var(--on-dark)' }}>
+            <strong>Hook Identified:</strong> {output.hook_type || 'Custom'}
+          </p>
+          <div style={{ fontSize: '13px', color: 'var(--disabled)' }}>
+            Visual: {output.visual_hook}<br/>
+            Verbal: {output.verbal_hook}
+          </div>
+        </div>
+      );
+    case 'audience':
+      return (
+        <div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: 'var(--on-dark)' }}>
+            <strong>Sentiment:</strong> {output.signal_type || 'Mixed'}
+          </p>
+          <div style={{ fontSize: '13px', color: 'var(--disabled)' }}>
+            {output.core_desire && `Core Desire: ${output.core_desire}`}
+          </div>
+        </div>
+      );
+    case 'pattern':
+      return (
+        <div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: 'var(--on-dark)' }}>
+            Detected a <strong>{output.pattern_type}</strong> in <strong>{output.craft_element}</strong>.
+          </p>
+          <div style={{ fontSize: '13px', color: 'var(--disabled)' }}>
+            {output.observation}
+          </div>
+        </div>
+      );
+    case 'skill':
+      return (
+        <div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: 'var(--on-dark)' }}>
+            <strong>Prescribed Micro-Skill:</strong>
+          </p>
+          <div style={{ fontSize: '16px', color: 'var(--primary)', fontWeight: 'bold' }}>
+            {output.skill}
+          </div>
+        </div>
+      );
+    default:
+      return (
+        <pre className="code-block" style={{ margin: 0 }}>
+          {JSON.stringify(output, null, 2)}
+        </pre>
+      );
+  }
+};
+
+const AgentNode = ({ agent, icon: Icon }: { agent?: AgentState, icon: any }) => {
+  if (!agent) return null;
+  return (
+    <div className={`agent-card ${agent.status}`}>
+      <div className="agent-header">
+        <Icon size={18} style={{ color: agent.status === 'running' ? 'var(--primary)' : 'inherit' }} />
+        <span style={{ flex: 1 }}>{agent.name}</span>
+        <span className="agent-status">{agent.status}</span>
+      </div>
+      {agent.status === 'running' && (
+        <div style={{ color: 'var(--disabled)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Activity size={14} className="animate-pulse-glow" style={{ color: 'var(--primary)' }} /> Processing...
+        </div>
+      )}
+      {agent.status === 'completed' && renderAgentOutput(agent.id, agent.output)}
+      {agent.status === 'error' && (
+        <div style={{ color: 'var(--error)', fontSize: '13px' }}>
+          {agent.output?.error || 'Execution failed.'}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state }) => {
   if (!isOpen) return null;
 
+  const agents = state?.agents || {};
+
   return (
     <div className={`dev-overlay ${isOpen ? 'open' : ''}`}>
-      <div className="flex-between" style={{ marginBottom: '2rem' }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.2rem' }}>
-          <Terminal size={20} /> Dev Mode
+      <div className="flex-between" style={{ marginBottom: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.5rem', color: 'var(--on-dark)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          <Terminal size={24} /> System Visualization
         </h2>
-        <button className="btn-secondary" onClick={onClose} style={{ padding: '0.25rem 0.5rem' }}>
-          Close
+        <button className="btn-icon" onClick={onClose} style={{ color: 'var(--on-dark)' }}>
+          <X size={32} />
         </button>
       </div>
 
-      <div style={{ marginBottom: '2rem' }}>
-        <p style={{ fontSize: '0.9rem', color: 'var(--body)' }}>
-          Real-time visualization of the multi-agent orchestration engine.
+      <div style={{ textAlign: 'center', marginBottom: '2rem', maxWidth: '1000px', margin: '0 auto 4rem auto' }}>
+        <p style={{ fontSize: '1.1rem', color: 'var(--disabled)' }}>
+          Real-time audience view of the multi-agent orchestration engine.
         </p>
       </div>
 
-      {state && Object.values(state.agents).map((agent) => (
-        <div key={agent.id} className={`agent-card ${agent.id === 'interpreter' ? 'pipeline-stage' : ''}`}>
-          <div className="agent-header">
-            {agent.status === 'running' && (agent.id === 'interpreter' ? <Database size={16} style={{ color: 'var(--focus-outer)' }} /> : <Activity size={16} style={{ color: '#854d0e' }} />)}
-            {agent.status === 'completed' && <CheckCircle2 size={16} style={{ color: 'var(--success-deep)' }} />}
-            {agent.status === 'idle' && <Clock size={16} style={{ color: 'var(--mute)' }} />}
-            <span style={{ color: 'var(--ink)' }}>{agent.name}</span>
-            {agent.id === 'interpreter' && (
-              <span style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', background: '#eef2ff', color: 'var(--focus-outer)', borderRadius: '4px', marginLeft: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px', border: '1px solid #c7d2fe' }}>
-                Data Pipeline
-              </span>
-            )}
-            <span style={{ marginLeft: 'auto' }} className={`agent-status ${agent.status}`}>
-              {agent.status}
-            </span>
-          </div>
-          
-          {agent.output && (
-            <div style={{ marginTop: '1rem' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--mute)', marginBottom: '0.25rem' }}>JSON PAYLOAD</div>
-              <pre className="code-block">
-                {JSON.stringify(agent.output, null, 2)}
-              </pre>
-            </div>
-          )}
+      {!state ? (
+        <div style={{ textAlign: 'center', color: 'var(--disabled)', marginTop: '8rem' }}>
+          <Activity size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+          <p style={{ fontSize: '1.2rem' }}>Awaiting Trigger Event...</p>
         </div>
-      ))}
-      
-      {!state && (
-        <div style={{ textAlign: 'center', color: 'var(--mute)', marginTop: '4rem' }}>
-          <Activity size={32} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-          <p>Awaiting Trigger Event...</p>
+      ) : (
+        <div className="pipeline-graph">
+          
+          {/* Row 1: Data Collector */}
+          <div className="pipeline-row">
+            <AgentNode agent={agents.data_collector} icon={Database} />
+          </div>
+
+          {/* Row 2: Parallel Analysis (Deconstructor + Audience) */}
+          <div className="pipeline-row">
+            <div className={`edge split-vertical-top ${agents.deconstructor?.status !== 'idle' ? 'active' : ''}`}></div>
+            <div className={`edge split-horizontal ${agents.deconstructor?.status !== 'idle' ? 'active' : ''}`}></div>
+            
+            <div className={`edge edge-arrow split-vertical-left ${agents.deconstructor?.status !== 'idle' ? 'active' : ''}`}></div>
+            <AgentNode agent={agents.deconstructor} icon={Search} />
+            
+            <AgentNode agent={agents.audience} icon={Users} />
+            <div className={`edge edge-arrow split-vertical-right ${agents.audience?.status !== 'idle' ? 'active' : ''}`}></div>
+          </div>
+
+          {/* Row 3: Pattern Detector */}
+          <div className="pipeline-row">
+            <div className={`edge merge-vertical-left ${agents.pattern?.status !== 'idle' ? 'active' : ''}`}></div>
+            <div className={`edge merge-vertical-right ${agents.pattern?.status !== 'idle' ? 'active' : ''}`}></div>
+            <div className={`edge merge-horizontal ${agents.pattern?.status !== 'idle' ? 'active' : ''}`}></div>
+            <div className={`edge edge-arrow merge-vertical-bottom ${agents.pattern?.status !== 'idle' ? 'active' : ''}`}></div>
+
+            <AgentNode agent={agents.pattern} icon={BrainCircuit} />
+          </div>
+
+          {/* Row 4: Coach */}
+          <div className="pipeline-row">
+            <div className={`edge edge-arrow direct-vertical ${agents.skill?.status !== 'idle' ? 'active' : ''}`}></div>
+            <AgentNode agent={agents.skill} icon={Target} />
+          </div>
+
         </div>
       )}
     </div>

@@ -24,7 +24,7 @@ export class Orchestrator {
     this.updateState = updateState;
     this.state = {
       agents: {
-        interpreter: { id: 'interpreter', name: 'Data Harvester', status: 'idle' },
+        data_collector: { id: 'data_collector', name: 'Video Data Collector', status: 'idle' },
         deconstructor: { id: 'deconstructor', name: 'Content Deconstructor', status: 'idle' },
         audience: { id: 'audience', name: 'Audience Signal Reader', status: 'idle' },
         pattern: { id: 'pattern', name: 'Pattern Detector', status: 'idle' },
@@ -50,12 +50,12 @@ export class Orchestrator {
 
     // Parallel Phase
     this.setAgentStatus('deconstructor', 'running');
-    this.setAgentStatus('interpreter', 'running');
+    this.setAgentStatus('data_collector', 'running');
     this.setAgentStatus('audience', 'running');
 
     if (mockMode) {
       await this.delay(1500);
-      this.setAgentStatus('interpreter', 'completed', { views: "1.2M", title: "Mock Video" });
+      this.setAgentStatus('data_collector', 'completed', { views: "1.2M", title: "Mock Video" });
       this.setAgentStatus('deconstructor', 'completed', { hook_type: "Curiosity Gap" });
       this.setAgentStatus('audience', 'completed', { signal_type: "Positive" });
       
@@ -74,15 +74,15 @@ export class Orchestrator {
       return;
     }
 
-    let interpreterPromise: Promise<any>;
+    let dataCollectorPromise: Promise<any>;
     let metricsData: any = null;
     let commentsData: string[] = [];
 
     if (!youtubeKey) {
-      this.setAgentStatus('interpreter', 'error', { error: 'YouTube API Key is required.' });
-      interpreterPromise = Promise.reject('No YouTube Key');
+      this.setAgentStatus('data_collector', 'error', { error: 'YouTube API Key is required.' });
+      dataCollectorPromise = Promise.reject('No YouTube Key');
     } else {
-      interpreterPromise = fetchVideoMetrics(url, youtubeKey).then(async (metrics) => {
+      dataCollectorPromise = fetchVideoMetrics(url, youtubeKey).then(async (metrics) => {
         metricsData = metrics;
         const output = {
           views: `${formatNumber(metrics.viewCount)}`,
@@ -94,13 +94,13 @@ export class Orchestrator {
           description: metrics.description ? metrics.description.substring(0, 100) + '...' : '',
           tags: metrics.tags,
         };
-        this.setAgentStatus('interpreter', 'completed', output);
+        this.setAgentStatus('data_collector', 'completed', output);
         
         // Also fetch comments for the Audience Signal Reader
         commentsData = await fetchVideoComments(url, youtubeKey);
         return output;
       }).catch(err => {
-        this.setAgentStatus('interpreter', 'error', { error: err.message });
+        this.setAgentStatus('data_collector', 'error', { error: err.message });
         throw err;
       });
     }
@@ -114,9 +114,9 @@ export class Orchestrator {
       deconstructorPromise = Promise.reject('No Gemini Key');
       audiencePromise = Promise.reject('No Gemini Key');
     } else {
-      // The deconstructor and audience reader need data from the interpreter phase first in this real setup
-      // So we must wait for interpreterPromise to resolve to get the title, category, and comments.
-      deconstructorPromise = interpreterPromise.then(() => {
+      // The deconstructor and audience reader need data from the data collector phase first in this real setup
+      // So we must wait for dataCollectorPromise to resolve to get the title, category, and comments.
+      deconstructorPromise = dataCollectorPromise.then(() => {
         return runContentDeconstructor(geminiKey, metricsData).then(output => {
           this.setAgentStatus('deconstructor', 'completed', output);
           return output;
@@ -126,7 +126,7 @@ export class Orchestrator {
         });
       });
 
-      audiencePromise = interpreterPromise.then(async () => {
+      audiencePromise = dataCollectorPromise.then(async () => {
         // Stagger this request by 2 seconds to avoid hitting the Gemini Free Tier burst rate limit (429 error)
         await this.delay(2000); 
         return runAudienceSignalReader(geminiKey, commentsData).then(output => {
@@ -140,15 +140,15 @@ export class Orchestrator {
     }
 
     try {
-      const [deconstructorData, interpreterData, audienceData] = await Promise.all([
+      const [deconstructorData, dataCollectorData, audienceData] = await Promise.all([
         deconstructorPromise,
-        interpreterPromise,
+        dataCollectorPromise,
         audiencePromise
       ]);
 
       // Checkpoint: Pattern Detector
       this.setAgentStatus('pattern', 'running');
-      const patternData = await runPatternDetector(geminiKey, deconstructorData, interpreterData, audienceData);
+      const patternData = await runPatternDetector(geminiKey, deconstructorData, dataCollectorData, audienceData);
       this.setAgentStatus('pattern', 'completed', patternData);
 
       // Conditional: Skill Coach
