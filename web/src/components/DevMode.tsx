@@ -105,7 +105,7 @@ const AgentNode = ({ agent, icon: Icon, isSelected, onSelect }: { agent?: AgentS
         <span className="agent-status">{agent.status}</span>
       </div>
       {agent.status === 'running' && (
-        <div style={{ color: 'var(--disabled)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ color: 'var(--mute)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Activity size={14} className="animate-pulse-glow" style={{ color: 'var(--primary)' }} /> Processing...
         </div>
       )}
@@ -133,12 +133,9 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
   const agents = state?.agents || {};
   const [activeTab, setActiveTab] = useState<TabKey>('diagram');
   const [selectedAgentId, setSelectedAgentId] = useState<string>('data_collector');
+  const [inspectorAgentId, setInspectorAgentId] = useState<string | null>(null);
   const [sessionEdits, setSessionEdits] = useState<SessionRecord>({});
-  const selectedAgent = agents[selectedAgentId];
-
-  useEffect(() => {
-    if (!selectedAgentId && AGENT_ORDER.length > 0) setSelectedAgentId(AGENT_ORDER[0]);
-  }, [selectedAgentId]);
+  const selectedAgent = inspectorAgentId ? agents[inspectorAgentId] : undefined;
 
   useEffect(() => {
     if (!selectedAgent) return;
@@ -155,7 +152,7 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
     });
   }, [selectedAgent]);
 
-  const selectedEdit = sessionEdits[selectedAgentId];
+  const selectedEdit = inspectorAgentId ? sessionEdits[inspectorAgentId] : undefined;
 
   const rerunSelectedAgent = async (textInput: string) => {
     if (!selectedAgent) return;
@@ -218,16 +215,16 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
   return (
     <div className={`dev-overlay ${isOpen ? 'open' : ''}`}>
       <div className="flex-between" style={{ marginBottom: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.5rem', color: 'var(--on-dark)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.5rem', color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '1px' }}>
           <Terminal size={24} /> System Visualization
         </h2>
-        <button className="btn-icon" onClick={onClose} style={{ color: 'var(--on-dark)' }}>
+        <button className="btn-icon" onClick={onClose} style={{ color: 'var(--ink)' }}>
           <X size={32} />
         </button>
       </div>
 
       <div style={{ textAlign: 'center', marginBottom: '2rem', maxWidth: '1000px', margin: '0 auto 4rem auto' }}>
-        <p style={{ fontSize: '1.1rem', color: 'var(--disabled)' }}>
+        <p style={{ fontSize: '1.1rem', color: 'var(--mute)' }}>
           Real-time audience view of the multi-agent orchestration engine.
         </p>
       </div>
@@ -240,18 +237,18 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
         </button>
       </div>
 
-      {!state ? (
-        <div style={{ textAlign: 'center', color: 'var(--disabled)', marginTop: '8rem' }}>
-          <Activity size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-          <p style={{ fontSize: '1.2rem' }}>Awaiting Trigger Event...</p>
-        </div>
-      ) : activeTab === 'diagram' ? (
-        <div className="dev-split-layout">
-          <div className="pipeline-graph">
+      {activeTab === 'diagram' ? (
+        !state ? (
+          <div style={{ textAlign: 'center', color: 'var(--mute)', marginTop: '8rem' }}>
+            <Activity size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+            <p style={{ fontSize: '1.2rem' }}>Awaiting Trigger Event...</p>
+          </div>
+        ) : (
+        <div className="pipeline-graph">
           
           {/* Row 1: Data Collector */}
           <div className="pipeline-row">
-            <AgentNode agent={agents.data_collector} icon={Database} isSelected={selectedAgentId === 'data_collector'} onSelect={() => setSelectedAgentId('data_collector')} />
+            <AgentNode agent={agents.data_collector} icon={Database} isSelected={inspectorAgentId === 'data_collector'} onSelect={() => setInspectorAgentId('data_collector')} />
           </div>
 
           {/* Row 2: Parallel Analysis (Deconstructor + Audience) */}
@@ -260,9 +257,9 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
             <div className={`edge split-horizontal ${agents.deconstructor?.status !== 'idle' ? 'active' : ''}`}></div>
             
             <div className={`edge edge-arrow split-vertical-left ${agents.deconstructor?.status !== 'idle' ? 'active' : ''}`}></div>
-            <AgentNode agent={agents.deconstructor} icon={Search} isSelected={selectedAgentId === 'deconstructor'} onSelect={() => setSelectedAgentId('deconstructor')} />
+            <AgentNode agent={agents.deconstructor} icon={Search} isSelected={inspectorAgentId === 'deconstructor'} onSelect={() => setInspectorAgentId('deconstructor')} />
             
-            <AgentNode agent={agents.audience} icon={Users} isSelected={selectedAgentId === 'audience'} onSelect={() => setSelectedAgentId('audience')} />
+            <AgentNode agent={agents.audience} icon={Users} isSelected={inspectorAgentId === 'audience'} onSelect={() => setInspectorAgentId('audience')} />
             <div className={`edge edge-arrow split-vertical-right ${agents.audience?.status !== 'idle' ? 'active' : ''}`}></div>
           </div>
 
@@ -273,76 +270,16 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
             <div className={`edge merge-horizontal ${agents.pattern?.status !== 'idle' ? 'active' : ''}`}></div>
             <div className={`edge edge-arrow merge-vertical-bottom ${agents.pattern?.status !== 'idle' ? 'active' : ''}`}></div>
 
-            <AgentNode agent={agents.pattern} icon={BrainCircuit} isSelected={selectedAgentId === 'pattern'} onSelect={() => setSelectedAgentId('pattern')} />
+            <AgentNode agent={agents.pattern} icon={BrainCircuit} isSelected={inspectorAgentId === 'pattern'} onSelect={() => setInspectorAgentId('pattern')} />
           </div>
 
           {/* Row 4: Coach */}
           <div className="pipeline-row">
             <div className={`edge edge-arrow direct-vertical ${agents.skill?.status !== 'idle' ? 'active' : ''}`}></div>
-            <AgentNode agent={agents.skill} icon={Target} isSelected={selectedAgentId === 'skill'} onSelect={() => setSelectedAgentId('skill')} />
+            <AgentNode agent={agents.skill} icon={Target} isSelected={inspectorAgentId === 'skill'} onSelect={() => setInspectorAgentId('skill')} />
           </div>
-
-          </div>
-          <aside className="inspector-panel">
-            <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--on-dark)' }}>
-              Agent Inspector {selectedAgent ? `- ${selectedAgent.name}` : ''}
-            </h3>
-            <p style={{ color: 'var(--disabled)', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              Expected output is generated by re-running the selected agent with the edited input.
-            </p>
-            <div className="inspector-section">
-              <h4>Current Input</h4>
-              {(toReadableText(selectedAgentId, selectedAgent?.input, 'input')).split('\n').map((line, idx) => (
-                <p key={`input-${idx}`} className="inspector-line">{line}</p>
-              ))}
-            </div>
-            <div className="inspector-section">
-              <h4>Current Output</h4>
-              {(toReadableText(selectedAgentId, selectedAgent?.output, 'output')).split('\n').map((line, idx) => (
-                <p key={`output-${idx}`} className="inspector-line">{line}</p>
-              ))}
-            </div>
-            <div className="inspector-section">
-              <h4>Edit Input (Session Local)</h4>
-              <textarea
-                className="inspector-textarea"
-                value={selectedEdit?.editedInput || ''}
-                onChange={(e) => setSessionEdits(prev => ({
-                  ...prev,
-                  [selectedAgentId]: {
-                    ...(prev[selectedAgentId] || { expectedOutput: '', isLoading: false }),
-                    editedInput: e.target.value
-                  }
-                }))}
-              />
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                <button type="button" className="btn-primary" onClick={() => rerunSelectedAgent(selectedEdit?.editedInput || '')} disabled={!selectedEdit?.editedInput || selectedEdit?.isLoading}>
-                  {selectedEdit?.isLoading ? 'Re-running...' : 'Update Expected Output'}
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setSessionEdits(prev => ({
-                    ...prev,
-                    [selectedAgentId]: {
-                      ...(prev[selectedAgentId] || { expectedOutput: '', isLoading: false }),
-                      editedInput: toReadableText(selectedAgentId, selectedAgent?.input, 'input')
-                    }
-                  }))}
-                >
-                  Reset to Default Input
-                </button>
-              </div>
-              {selectedEdit?.error && <p style={{ color: 'var(--error)', marginTop: '0.5rem' }}>{selectedEdit.error}</p>}
-            </div>
-            <div className="inspector-section">
-              <h4>Expected Output</h4>
-              {(selectedEdit?.expectedOutput || 'No expected output yet.').split('\n').map((line, idx) => (
-                <p key={`expected-${idx}`} className="inspector-line">{line}</p>
-              ))}
-            </div>
-          </aside>
         </div>
+        )
       ) : (
         <div className="dev-split-layout config-layout">
           <div className="config-list">
@@ -368,6 +305,74 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
               <p className="inspector-line"><strong>Scope:</strong> {selectedAgentConfig.knowledgeBase.scope}</p>
               <p className="inspector-line"><strong>Boundary:</strong> {selectedAgentConfig.knowledgeBase.boundaries}</p>
               <p className="inspector-line"><strong>Accessible Data:</strong> {selectedAgentConfig.knowledgeBase.access.join(', ')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {activeTab === 'diagram' && inspectorAgentId && selectedAgent && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '880px' }}>
+            <div className="flex-between">
+              <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--ink)' }}>
+                Agent Inspector - {selectedAgent.name}
+              </h3>
+              <button className="btn-icon" onClick={() => setInspectorAgentId(null)}>
+                <X size={24} />
+              </button>
+            </div>
+            <p style={{ color: 'var(--mute)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Expected output is generated by re-running the selected agent with the edited input.
+            </p>
+            <div className="inspector-section">
+              <h4>Current Input</h4>
+              {toReadableText(inspectorAgentId, selectedAgent.input, 'input').split('\n').map((line, idx) => (
+                <p key={`input-${idx}`} className="inspector-line">{line}</p>
+              ))}
+            </div>
+            <div className="inspector-section">
+              <h4>Current Output</h4>
+              {toReadableText(inspectorAgentId, selectedAgent.output, 'output').split('\n').map((line, idx) => (
+                <p key={`output-${idx}`} className="inspector-line">{line}</p>
+              ))}
+            </div>
+            <div className="inspector-section">
+              <h4>Edit Input (Session Local)</h4>
+              <textarea
+                className="inspector-textarea"
+                value={selectedEdit?.editedInput || ''}
+                onChange={(e) => setSessionEdits(prev => ({
+                  ...prev,
+                  [inspectorAgentId]: {
+                    ...(prev[inspectorAgentId] || { expectedOutput: '', isLoading: false }),
+                    editedInput: e.target.value
+                  }
+                }))}
+              />
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                <button type="button" className="btn-primary" onClick={() => rerunSelectedAgent(selectedEdit?.editedInput || '')} disabled={!selectedEdit?.editedInput || selectedEdit?.isLoading}>
+                  {selectedEdit?.isLoading ? 'Re-running...' : 'Update Expected Output'}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setSessionEdits(prev => ({
+                    ...prev,
+                    [inspectorAgentId]: {
+                      ...(prev[inspectorAgentId] || { expectedOutput: '', isLoading: false }),
+                      editedInput: toReadableText(inspectorAgentId, selectedAgent.input, 'input')
+                    }
+                  }))}
+                >
+                  Reset to Default Input
+                </button>
+              </div>
+              {selectedEdit?.error && <p style={{ color: 'var(--error)', marginTop: '0.5rem' }}>{selectedEdit.error}</p>}
+            </div>
+            <div className="inspector-section">
+              <h4>Expected Output</h4>
+              {(selectedEdit?.expectedOutput || 'No expected output yet.').split('\n').map((line, idx) => (
+                <p key={`expected-${idx}`} className="inspector-line">{line}</p>
+              ))}
             </div>
           </div>
         </div>

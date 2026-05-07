@@ -237,13 +237,13 @@ button.btn-secondary:hover {
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  background: var(--charcoal, #25282b);
+  background: var(--surface-soft);
   z-index: 1000;
   padding: 64px 32px;
   overflow-y: auto;
   transform: translateY(100%);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--on-dark);
+  color: var(--body);
 }
 
 .dev-overlay.open {
@@ -274,17 +274,16 @@ button.btn-secondary:hover {
 }
 
 .agent-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--rounded-card, 6px);
+  background: var(--surface-card);
+  border-radius: var(--rounded-md);
   padding: 24px;
   width: 300px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--hairline);
   transition: all 0.3s ease;
   position: relative;
   z-index: 2;
   text-align: left;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .agent-card.selected {
@@ -294,7 +293,7 @@ button.btn-secondary:hover {
 
 .agent-card.running {
   border-color: var(--primary);
-  box-shadow: 0 0 15px rgba(230, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(230, 0, 35, 0.14);
 }
 
 .agent-card.completed {
@@ -324,9 +323,9 @@ button.btn-secondary:hover {
 .agent-status {
   font-size: 12px;
   padding: 4px 12px;
-  border-radius: var(--rounded-pill, 60px);
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--disabled, #bebebe);
+  border-radius: var(--rounded-full);
+  background: var(--secondary-bg);
+  color: var(--mute);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -337,7 +336,7 @@ button.btn-secondary:hover {
 }
 
 .agent-card.completed .agent-status {
-  background: var(--success, #103c25);
+  background: var(--success-deep);
   color: var(--on-dark);
 }
 
@@ -366,8 +365,8 @@ button.btn-secondary:hover {
 .inspector-panel,
 .config-details,
 .config-list {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
   border-radius: var(--rounded-md);
   padding: 16px;
 }
@@ -378,7 +377,7 @@ button.btn-secondary:hover {
 }
 
 .inspector-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: 1px solid var(--hairline);
   padding-top: 12px;
   margin-top: 12px;
 }
@@ -388,12 +387,12 @@ button.btn-secondary:hover {
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--on-dark);
+  color: var(--ink);
 }
 
 .inspector-line {
   font-size: 13px;
-  color: #d9d9d9;
+  color: var(--body);
   margin: 0 0 6px;
 }
 
@@ -401,9 +400,9 @@ button.btn-secondary:hover {
   width: 100%;
   min-height: 120px;
   resize: vertical;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--on-dark);
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
   border-radius: var(--rounded-sm);
   padding: 10px;
   font-size: 13px;
@@ -419,9 +418,9 @@ button.btn-secondary:hover {
   width: 100%;
   text-align: left;
   margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--on-dark);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--surface-card);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
   border-radius: var(--rounded-sm);
   padding: 10px 12px;
   cursor: pointer;
@@ -429,20 +428,20 @@ button.btn-secondary:hover {
 
 .config-list-item.active {
   border-color: var(--primary);
-  background: rgba(230, 0, 35, 0.15);
+  background: rgba(230, 0, 35, 0.08);
 }
 
 .config-monospace {
   margin: 0;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
   border-radius: var(--rounded-sm);
-  padding: 12px;
-  color: #f4f4f4;
+  padding: 14px;
+  color: var(--body);
   white-space: pre-wrap;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 12px;
-  line-height: 1.45;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .pipeline-row {
@@ -456,7 +455,7 @@ button.btn-secondary:hover {
 /* Graph Edges */
 .edge {
   position: absolute;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--hairline);
   z-index: 3;
 }
 
@@ -472,7 +471,7 @@ button.btn-secondary:hover {
   transform: translateX(-50%);
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 6px solid rgba(255, 255, 255, 0.1);
+  border-top: 6px solid var(--hairline);
   transition: border-top-color 0.3s ease;
 }
 
