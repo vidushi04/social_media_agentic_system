@@ -1,12 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Search, Settings2, PlayCircle, Video } from 'lucide-react';
 import type { OrchestratorState } from './agents/Orchestrator';
 import { Orchestrator } from './agents/Orchestrator';
 import { DevMode } from './components/DevMode';
 import { Dashboard } from './components/Dashboard';
+import { HistoryPanel } from './components/HistoryPanel';
 import { SettingsModal } from './components/SettingsModal';
+import { getAnalysisHistory } from './utils/knowledgeBase';
 
 function App() {
+  const [activeTab, setActiveTab] = useState<'latest' | 'history'>('latest');
+  const [analysisHistory, setAnalysisHistory] = useState(getAnalysisHistory());
   const [url, setUrl] = useState('');
   const [youtubeKey, setYoutubeKey] = useState(localStorage.getItem('YOUTUBE_API_KEY') || '');
   const [geminiKey, setGeminiKey] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
@@ -26,6 +30,10 @@ function App() {
     });
   }
 
+  useEffect(() => {
+    setAnalysisHistory(getAnalysisHistory());
+  }, []);
+
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) return;
@@ -39,6 +47,8 @@ function App() {
     setIsProcessing(true);
     try {
       await orchestratorRef.current?.processUrl(url, youtubeKey, geminiKey, mockMode);
+      setAnalysisHistory(getAnalysisHistory());
+      setActiveTab('latest');
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred while processing the video. Please check the URL.');
     }
@@ -128,13 +138,43 @@ function App() {
             )}
           </form>
 
-          {!isProcessing && orchestratorState?.finalSkill && (
-            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-              <Dashboard 
-                skillData={orchestratorState.finalSkill} 
-                patternData={orchestratorState.agents.pattern.output} 
-                onReset={() => { setUrl(''); setErrorMsg(''); setOrchestratorState(null); }}
-              />
+          {!isProcessing && (orchestratorState?.finalSkill || analysisHistory.length > 0) && (
+            <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className={activeTab === 'latest' ? 'btn-primary' : 'btn-secondary'}
+                  onClick={() => setActiveTab('latest')}
+                >
+                  Latest Analysis
+                </button>
+                <button
+                  type="button"
+                  className={activeTab === 'history' ? 'btn-primary' : 'btn-secondary'}
+                  onClick={() => setActiveTab('history')}
+                >
+                  History
+                </button>
+              </div>
+
+              {activeTab === 'latest' ? (
+                orchestratorState?.finalSkill ? (
+                  <Dashboard
+                    skillData={orchestratorState.finalSkill}
+                    patternData={orchestratorState.agents.pattern.output}
+                    onReset={() => { setUrl(''); setErrorMsg(''); setOrchestratorState(null); }}
+                  />
+                ) : (
+                  <div className="feature-card" style={{ marginTop: '2rem' }}>
+                    <h3 style={{ marginBottom: '0.5rem' }}>No current analysis</h3>
+                    <p style={{ margin: 0, color: 'var(--mute)' }}>
+                      Run a new analysis to see the latest recommendation here.
+                    </p>
+                  </div>
+                )
+              ) : (
+                <HistoryPanel history={analysisHistory} />
+              )}
             </div>
           )}
         </main>

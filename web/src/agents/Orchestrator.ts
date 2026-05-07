@@ -1,6 +1,7 @@
 export type AgentStatus = 'idle' | 'running' | 'completed' | 'error';
 import { fetchVideoMetrics, fetchVideoComments, formatNumber } from '../utils/youtube';
 import { runContentDeconstructor, runAudienceSignalReader, runPatternDetector, runCoach } from '../utils/llm';
+import { buildHistoricalContext, saveAnalysisToKnowledgeBase } from '../utils/knowledgeBase';
 
 export interface AgentState {
   id: string;
@@ -49,6 +50,7 @@ export class Orchestrator {
     });
     this.state.finalSkill = undefined;
     this.updateState({ ...this.state });
+    const historicalContext = buildHistoricalContext(8);
 
     // Parallel Phase
     this.setAgentStatus('deconstructor', 'running');
@@ -81,6 +83,15 @@ export class Orchestrator {
       
       this.state.finalSkill = skillData;
       this.updateState({ ...this.state });
+      saveAnalysisToKnowledgeBase({
+        timestamp: new Date().toISOString(),
+        videoUrl: url,
+        dataCollector: this.state.agents.data_collector.output,
+        deconstructor: this.state.agents.deconstructor.output,
+        audience: this.state.agents.audience.output,
+        pattern: this.state.agents.pattern.output,
+        coach: skillData
+      });
       return;
     }
 
@@ -133,7 +144,7 @@ export class Orchestrator {
           description: metricsData?.description,
           tags: metricsData?.tags
         });
-        return runContentDeconstructor(geminiKey, metricsData).then(output => {
+        return runContentDeconstructor(geminiKey, metricsData, historicalContext).then(output => {
           this.setAgentStatus('deconstructor', 'completed', output, {
             title: metricsData?.title,
             categoryName: metricsData?.categoryName,
@@ -151,7 +162,7 @@ export class Orchestrator {
         // Stagger this request by 2 seconds to avoid hitting the Gemini Free Tier burst rate limit (429 error)
         await this.delay(2000); 
         this.setAgentStatus('audience', 'running', undefined, { comments: commentsData });
-        return runAudienceSignalReader(geminiKey, commentsData).then(output => {
+        return runAudienceSignalReader(geminiKey, commentsData, historicalContext).then(output => {
           this.setAgentStatus('audience', 'completed', output, { comments: commentsData });
           return output;
         }).catch(err => {
@@ -174,7 +185,7 @@ export class Orchestrator {
         performance: dataCollectorData,
         audience: audienceData
       });
-      const patternData = await runPatternDetector(geminiKey, deconstructorData, dataCollectorData, audienceData);
+      const patternData = await runPatternDetector(geminiKey, deconstructorData, dataCollectorData, audienceData, historicalContext);
       this.setAgentStatus('pattern', 'completed', patternData, {
         deconstructor: deconstructorData,
         performance: dataCollectorData,
@@ -182,13 +193,24 @@ export class Orchestrator {
       });
 
       // Conditional: Skill Coach
+      let skillData: any = null;
       if (patternData.actionable_pattern_found) {
         this.setAgentStatus('skill', 'running', undefined, patternData);
-        const skillData = await runCoach(geminiKey, patternData);
+        skillData = await runCoach(geminiKey, patternData, historicalContext);
         this.setAgentStatus('skill', 'completed', skillData, patternData);
         this.state.finalSkill = skillData;
         this.updateState({ ...this.state });
       }
+
+      saveAnalysisToKnowledgeBase({
+        timestamp: new Date().toISOString(),
+        videoUrl: url,
+        dataCollector: dataCollectorData,
+        deconstructor: deconstructorData,
+        audience: audienceData,
+        pattern: patternData,
+        coach: skillData
+      });
 
     } catch (e: any) {
       console.error("Orchestration halted due to agent error", e);

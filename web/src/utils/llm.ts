@@ -41,9 +41,16 @@ const scheduleGeminiRequest = async <T>(task: () => Promise<T>): Promise<T> => {
 
 // --- Agent Invocation Functions ---
 
-export const runContentDeconstructor = async (apiKey: string, videoMetrics: any) => {
+export const runContentDeconstructor = async (apiKey: string, videoMetrics: any, historicalContext: string = '') => {
   const ai = getAI(apiKey);
-  const input = `Title: ${videoMetrics.title}\nCategory: ${videoMetrics.categoryName}\nDescription: ${videoMetrics.description}\nTags: ${videoMetrics.tags?.join(', ')}`;
+  const input = [
+    `Creator Historical Knowledge:\n${historicalContext || 'No prior context available.'}`,
+    '',
+    `Title: ${videoMetrics.title}`,
+    `Category: ${videoMetrics.categoryName}`,
+    `Description: ${videoMetrics.description}`,
+    `Tags: ${videoMetrics.tags?.join(', ')}`
+  ].join('\n');
   
   const response = await scheduleGeminiRequest(() => ai.models.generateContent({
     model: 'gemini-2.5-pro',
@@ -65,9 +72,14 @@ export const runContentDeconstructor = async (apiKey: string, videoMetrics: any)
   return JSON.parse(response.text || '{}');
 };
 
-export const runAudienceSignalReader = async (apiKey: string, comments: string[]) => {
+export const runAudienceSignalReader = async (apiKey: string, comments: string[], historicalContext: string = '') => {
   const ai = getAI(apiKey);
-  const input = comments.length > 0 ? comments.join('\n---\n') : "No comments available for this video.";
+  const commentsInput = comments.length > 0 ? comments.join('\n---\n') : 'No comments available for this video.';
+  const input = [
+    `Creator Historical Knowledge:\n${historicalContext || 'No prior context available.'}`,
+    '',
+    commentsInput
+  ].join('\n');
   
   const response = await scheduleGeminiRequest(() => ai.models.generateContent({
     model: 'gemini-2.5-pro',
@@ -89,9 +101,18 @@ export const runAudienceSignalReader = async (apiKey: string, comments: string[]
   return JSON.parse(response.text || '{}');
 };
 
-export const runPatternDetector = async (apiKey: string, deconstructorData: any, performanceData: any, audienceData: any) => {
+export const runPatternDetector = async (
+  apiKey: string,
+  deconstructorData: any,
+  performanceData: any,
+  audienceData: any,
+  historicalContext: string = ''
+) => {
   const ai = getAI(apiKey);
   const input = `
+Creator Historical Knowledge:
+${historicalContext || 'No prior context available.'}
+
 Deconstructor Output: ${JSON.stringify(deconstructorData)}
 Performance Output: ${JSON.stringify(performanceData)}
 Audience Output: ${JSON.stringify(audienceData)}
@@ -118,9 +139,13 @@ Audience Output: ${JSON.stringify(audienceData)}
   return JSON.parse(response.text || '{}');
 };
 
-export const runCoach = async (apiKey: string, patternData: any) => {
+export const runCoach = async (apiKey: string, patternData: any, historicalContext: string = '') => {
   const ai = getAI(apiKey);
-  const input = JSON.stringify(patternData);
+  const input = [
+    `Creator Historical Knowledge:\n${historicalContext || 'No prior context available.'}`,
+    '',
+    `Current Pattern Data:\n${JSON.stringify(patternData)}`
+  ].join('\n');
   
   const response = await scheduleGeminiRequest(() => ai.models.generateContent({
     model: 'gemini-2.5-pro',
