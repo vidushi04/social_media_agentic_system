@@ -28,8 +28,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   if (!isOpen) return null;
 
+  const keysRequired = !localMockMode;
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (keysRequired && (!localYoutube.trim() || !localGemini.trim())) {
+      return;
+    }
     setYoutubeKey(localYoutube);
     setGeminiKey(localGemini);
     setMockMode(localMockMode);
@@ -58,28 +63,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--body)', marginBottom: '0.5rem', fontWeight: 600 }}>
-              YouTube Data API v3 Key <span style={{ color: 'var(--error)' }}>*</span>
+              YouTube Data API v3 Key {keysRequired && <span style={{ color: 'var(--error)' }}>*</span>}
             </label>
             <input
               type="password"
-              required
+              required={keysRequired}
               className="text-input"
               value={localYoutube}
               onChange={(e) => setLocalYoutube(e.target.value)}
-              placeholder="AIzaSy..."
+              placeholder={keysRequired ? 'AIzaSy...' : 'Optional in mock mode'}
             />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--body)', marginBottom: '0.5rem', fontWeight: 600 }}>
-              Gemini API Key <span style={{ color: 'var(--error)' }}>*</span>
+              Gemini API Key {keysRequired && <span style={{ color: 'var(--error)' }}>*</span>}
             </label>
             <input
               type="password"
-              required
+              required={keysRequired}
               className="text-input"
               value={localGemini}
               onChange={(e) => setLocalGemini(e.target.value)}
-              placeholder="AIzaSy..."
+              placeholder={keysRequired ? 'AIzaSy...' : 'Optional in mock mode'}
             />
           </div>
           
@@ -100,7 +105,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
             <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn-primary">Save Keys</button>
+            <button type="submit" className="btn-primary">{localMockMode ? 'Save Settings' : 'Save Keys'}</button>
           </div>
         </form>
       </div>

@@ -19,7 +19,15 @@ function App() {
   const [orchestratorState, setOrchestratorState] = useState<OrchestratorState | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [mockMode, setMockMode] = useState(localStorage.getItem('MOCK_MODE') === 'true');
+  const [mockMode, setMockMode] = useState(() => {
+    const stored = localStorage.getItem('MOCK_MODE');
+    if (stored !== null) return stored === 'true';
+    const hasKeys = Boolean(
+      localStorage.getItem('YOUTUBE_API_KEY')?.trim() &&
+      localStorage.getItem('GEMINI_API_KEY')?.trim()
+    );
+    return !hasKeys;
+  });
   
   // Keep orchestrator instance
   const orchestratorRef = useRef<Orchestrator | null>(null);
