@@ -71,7 +71,7 @@ function App() {
               <Video color="white" size={24} />
             </div>
             <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--primary)' }}>
-              Agentic Booster
+              Trellis
             </h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
