@@ -1,22 +1,33 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Search, Settings2, PlayCircle, Video } from 'lucide-react';
+import { Search, Menu, Video, BarChart3, PlaySquare, Users, Plus, ChevronRight, MoreVertical, User, Settings, MessageSquare } from 'lucide-react';
 import type { OrchestratorState } from './agents/Orchestrator';
 import { Orchestrator } from './agents/Orchestrator';
 import { DevMode } from './components/DevMode';
 import { Dashboard } from './components/Dashboard';
 import { HistoryPanel } from './components/HistoryPanel';
 import { SettingsModal } from './components/SettingsModal';
-import { getAnalysisHistory } from './utils/knowledgeBase';
+import { getAnalysisHistory, type AnalysisRecord } from './utils/knowledgeBase';
+import emptyAnalysisIllustration from './assets/empty-analysis.svg';
+import emptyAnalysisBadge from './assets/empty-analysis-badge.svg';
+
+type View = 'dashboard' | 'history' | 'agents';
+
+const QUICK_TRY = [
+  { label: 'Mr. Beast', url: 'https://www.youtube.com/watch?v=0e3GPea1Tyg' },
+  { label: 'MKBHD Latest review', url: 'https://www.youtube.com/watch?v=iGeXGdYE7UE' },
+  { label: 'EV Car Review', url: 'https://www.youtube.com/watch?v=k8A0qPG0nag' },
+  { label: 'Art School Adm', url: 'https://www.youtube.com/watch?v=iGeXGdYE7UE' },
+];
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'latest' | 'history'>('latest');
+  const [view, setView] = useState<View>('dashboard');
   const [analysisHistory, setAnalysisHistory] = useState(getAnalysisHistory());
   const [url, setUrl] = useState('');
   const [youtubeKey, setYoutubeKey] = useState(localStorage.getItem('YOUTUBE_API_KEY') || '');
   const [geminiKey, setGeminiKey] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
-  const [isDevModeOpen, setIsDevModeOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [orchestratorState, setOrchestratorState] = useState<OrchestratorState | null>(null);
+  const [selectedHistory, setSelectedHistory] = useState<AnalysisRecord | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [mockMode, setMockMode] = useState(() => {
@@ -28,8 +39,7 @@ function App() {
     );
     return !hasKeys;
   });
-  
-  // Keep orchestrator instance
+
   const orchestratorRef = useRef<Orchestrator | null>(null);
 
   if (!orchestratorRef.current) {
@@ -52,11 +62,12 @@ function App() {
     }
 
     setErrorMsg('');
+    setSelectedHistory(null);
     setIsProcessing(true);
     try {
       await orchestratorRef.current?.processUrl(url, youtubeKey, geminiKey, mockMode);
       setAnalysisHistory(getAnalysisHistory());
-      setActiveTab('latest');
+      setView('dashboard');
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred while processing the video. Please check the URL.');
     }
@@ -70,137 +81,223 @@ function App() {
     return 'Finalizing analysis...';
   };
 
+  const activeSkill = selectedHistory?.coach || orchestratorState?.finalSkill;
+  const activePattern = selectedHistory?.pattern || orchestratorState?.agents.pattern.output;
+  const activeMetrics = selectedHistory?.dataCollector || orchestratorState?.agents.data_collector.output;
+  const activeVideoUrl = selectedHistory?.videoUrl || url;
+
+  const topContent = [...analysisHistory]
+    .reverse()
+    .slice(0, 3)
+    .map((entry) => ({
+      title: entry.dataCollector?.title || entry.videoUrl,
+      views: entry.dataCollector?.views ?? '—',
+    }));
+
+  const handleSelectHistory = (entry: AnalysisRecord) => {
+    setSelectedHistory(entry);
+    setUrl(entry.videoUrl);
+    setView('dashboard');
+  };
+
   return (
-    <>
-      <div style={{ paddingBottom: '4rem' }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '2rem', borderBottom: '1px solid var(--hairline)', marginBottom: '3rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'var(--primary)', padding: '0.5rem', borderRadius: 'var(--rounded-full)' }}>
-              <Video color="white" size={24} />
+    <div className="studio-app">
+      <header className="studio-topbar">
+        <div className="studio-topbar-left">
+          <Menu size={24} color="var(--studio-ink)" />
+          <h1 className="studio-logo">Trellis</h1>
+        </div>
+        <div className="studio-topbar-spacer" />
+        <div className="studio-search">
+          <Search size={20} />
+          <span>Search across your channel</span>
+        </div>
+        <div className="studio-topbar-spacer" />
+        <button className="studio-create-btn" onClick={() => setIsSettingsOpen(true)} title="API Settings">
+          <Video size={22} />
+          Api Config
+        </button>
+        <div className="studio-avatar" />
+      </header>
+
+      <div className="studio-body">
+        <aside className="studio-sidebar">
+          <div className="studio-channel">
+            <div className="studio-channel-avatar">
+              <User size={48} />
             </div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--primary)' }}>
-              Trellis
-            </h1>
+            <p className="studio-channel-label">Your channel</p>
+            <p className="studio-channel-name">Vidushi Bissa</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ fontSize: '0.9rem', color: 'var(--mute)' }}>
-              Content Packaging Intelligence
-            </div>
-            <button className="btn-icon" onClick={() => setIsSettingsOpen(true)} title="API Settings">
-              <Settings2 size={20} color="var(--ink)" />
+          <nav className="studio-nav">
+            <button
+              className={`studio-nav-item ${view === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setView('dashboard')}
+            >
+              <BarChart3 size={24} />
+              Dashboard
             </button>
-          </div>
-        </header>
+            <button
+              className={`studio-nav-item ${view === 'history' ? 'active' : ''}`}
+              onClick={() => setView('history')}
+            >
+              <PlaySquare size={24} />
+              Past Analysis
+            </button>
+            <button
+              className={`studio-nav-item ${view === 'agents' ? 'active' : ''}`}
+              onClick={() => setView('agents')}
+            >
+              <Users size={24} />
+              Agents
+            </button>
+          </nav>
+          <div className="studio-sidebar-spacer" />
+          <nav className="studio-nav studio-nav-bottom">
+            <button className="studio-nav-item" onClick={() => setIsSettingsOpen(true)}>
+              <Settings size={24} />
+              Settings
+            </button>
+            <button className="studio-nav-item" type="button">
+              <MessageSquare size={24} />
+              Send feedback
+            </button>
+          </nav>
+        </aside>
 
-        <main>
-          <div style={{ textAlign: 'center', marginBottom: '4rem', marginTop: '2rem' }}>
-            <h1 style={{ fontSize: '4rem', marginBottom: '1rem', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-              Deconstruct your content.<br />Understand your audience.
-            </h1>
-            <p style={{ fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', color: 'var(--body)', marginTop: '1rem' }}>
-              Paste a YouTube URL below. Our multi-agent pipeline will reverse-engineer the psychology of your hook and prescribe an actionable micro-skill.
-            </p>
-          </div>
+        <main className="studio-content">
+          {view === 'dashboard' && (
+            <>
+              <div className="studio-page-header">
+                <h2 className="studio-page-title">Channel dashboard</h2>
+                <p className="studio-page-tagline">
+                  <span className="studio-gradient-text">Understand your audience</span>
+                  <span className="studio-tagline-dot">•</span>
+                  <span className="studio-gradient-text">Improve Engagement</span>
+                </p>
+                <p className="studio-disclaimer">
+                  Paste a YouTube URL below. Trellis multi-agent pipeline will help you reverse-engineer the psychology of your hook and prescribe an actionable micro-skill.
+                </p>
+              </div>
 
-          <form onSubmit={handleAnalyze} style={{ maxWidth: '700px', margin: '0 auto' }}>
-            <div className="feature-card-soft" style={{ display: 'flex', gap: '1rem', padding: '0.75rem', marginBottom: '1rem', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
-                <div style={{ flex: 1, position: 'relative' }}>
-                  <Search size={20} style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--mute)' }} />
-                  <input 
-                    type="text" 
-                    className="search-bar" 
-                    placeholder="Search for a YouTube video URL..."
+              <form onSubmit={handleAnalyze} className="studio-prompt-card">
+                <div className="studio-prompt-row">
+                  <input
+                    type="text"
+                    className="studio-prompt-input"
+                    placeholder="Paste Your Video link here for analysis"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     disabled={isProcessing}
                   />
+                  <button type="submit" className="btn-gradient" disabled={isProcessing || !url.trim()}>
+                    {isProcessing ? 'Analyzing...' : 'Analyze'}
+                  </button>
                 </div>
-                <button type="submit" className="btn-primary" disabled={isProcessing || !url.trim()}>
-                  {isProcessing ? 'Analyzing...' : <><PlayCircle size={18} /> Analyze</>}
-                </button>
-              </div>
-            </div>
+                <div>
+                  <div className="studio-chips-row" style={{ marginBottom: '18px' }}>
+                    <button type="button" className="studio-add-btn" title="Add a quick-try link">
+                      <Plus size={14} />
+                    </button>
+                    {QUICK_TRY.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        className="studio-chip"
+                        onClick={() => setUrl(item.url)}
+                        disabled={isProcessing}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                    <ChevronRight size={16} color="var(--studio-mute)" />
+                    <MoreVertical size={16} color="var(--studio-mute)" />
+                  </div>
+                  <p className="studio-fineprint">
+                    <span className="mute">AI can make mistakes. Please double check. Use discretion before you create or use ideas.</span>
+                    <span className="link">Learn more</span>
+                  </p>
+                </div>
+              </form>
 
-            {errorMsg && (
-              <div style={{ background: 'rgba(158, 10, 10, 0.05)', border: '1px solid var(--error)', color: 'var(--error)', padding: '1rem', borderRadius: 'var(--rounded-md)', marginBottom: '1rem', textAlign: 'left', animation: 'fadeIn 0.3s ease-out' }}>
-                <strong>Error:</strong> {errorMsg}
-              </div>
-            )}
+              {errorMsg && (
+                <div className="studio-error">
+                  <strong>Error:</strong> {errorMsg}
+                </div>
+              )}
 
-            {!isProcessing && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--mute)', display: 'flex', alignItems: 'center' }}>Quick Try:</span>
-                <button type="button" className="chip" onClick={() => setUrl('https://www.youtube.com/watch?v=iGeXGdYE7UE')}>Tech Review (MKBHD)</button>
-                <button type="button" className="chip" onClick={() => setUrl('https://www.youtube.com/watch?v=k8A0qPG0nag')}>EV Review</button>
-                <button type="button" className="chip" onClick={() => setUrl('https://www.youtube.com/watch?v=0e3GPea1Tyg')}>MrBeast</button>
-              </div>
-            )}
-
-            {isProcessing && (
-              <div className="loading-state" style={{ marginTop: '2rem', animation: 'fadeIn 0.3s ease-out' }}>
-                <div className="spinner"></div>
-                <h3 style={{ margin: '1rem 0 0.5rem', color: 'var(--primary)', fontSize: '1.2rem' }}>Agentic Pipeline Active</h3>
-                <p style={{ color: 'var(--mute)', margin: 0, fontSize: '1rem' }}>{getActiveAgentName()}</p>
-              </div>
-            )}
-          </form>
-
-          {!isProcessing && (orchestratorState?.finalSkill || analysisHistory.length > 0) && (
-            <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '1rem' }}>
-                <button
-                  type="button"
-                  className={activeTab === 'latest' ? 'btn-primary' : 'btn-secondary'}
-                  onClick={() => setActiveTab('latest')}
-                >
-                  Latest Analysis
-                </button>
-                <button
-                  type="button"
-                  className={activeTab === 'history' ? 'btn-primary' : 'btn-secondary'}
-                  onClick={() => setActiveTab('history')}
-                >
-                  History
-                </button>
-              </div>
-
-              {activeTab === 'latest' ? (
-                orchestratorState?.finalSkill ? (
+              <div className="studio-perf-card">
+                <h3 className="studio-perf-title">Latest video performance</h3>
+                {isProcessing ? (
+                  <div className="loading-state" style={{ flex: 1, animation: 'fadeIn 0.3s ease-out' }}>
+                    <div className="spinner"></div>
+                    <h3 style={{ margin: '1rem 0 0.5rem', fontSize: '1.2rem' }} className="studio-gradient-text">Agentic Pipeline Active</h3>
+                    <p style={{ color: 'var(--studio-mute)', margin: 0, fontSize: '1rem' }}>{getActiveAgentName()}</p>
+                  </div>
+                ) : activeSkill ? (
                   <Dashboard
-                    skillData={orchestratorState.finalSkill}
-                    patternData={orchestratorState.agents.pattern.output}
-                    onReset={() => { setUrl(''); setErrorMsg(''); setOrchestratorState(null); }}
+                    skillData={activeSkill}
+                    patternData={activePattern}
+                    videoMetrics={activeMetrics}
+                    videoUrl={activeVideoUrl}
+                    topContent={topContent}
+                    onReset={() => {
+                      setUrl('');
+                      setErrorMsg('');
+                      setSelectedHistory(null);
+                      setOrchestratorState(null);
+                    }}
+                    onGoToAgents={() => setView('agents')}
                   />
                 ) : (
-                  <div className="feature-card" style={{ marginTop: '2rem' }}>
-                    <h3 style={{ marginBottom: '0.5rem' }}>No current analysis</h3>
-                    <p style={{ margin: 0, color: 'var(--mute)' }}>
-                      Run a new analysis to see the latest recommendation here.
-                    </p>
+                  <div className="studio-empty-state">
+                    <div className="studio-empty-illustration">
+                      <img className="base" src={emptyAnalysisIllustration} alt="" />
+                      <img className="badge" src={emptyAnalysisBadge} alt="" />
+                    </div>
+                    <div className="studio-empty-text">
+                      <p className="studio-empty-title">No current analysis</p>
+                      <p className="studio-empty-sub">Run a new analysis to see the latest recommendation here.</p>
+                    </div>
                   </div>
-                )
-              ) : (
-                <HistoryPanel history={analysisHistory} />
-              )}
-            </div>
+                )}
+              </div>
+
+              <HistoryPanel
+                history={analysisHistory}
+                compact
+                initialLimit={3}
+                onSelect={handleSelectHistory}
+              />
+            </>
+          )}
+
+          {view === 'history' && (
+            <>
+              <div className="studio-page-header">
+                <h2 className="studio-page-title">Past Analysis</h2>
+                <p className="studio-disclaimer">
+                  Every analysis you run is saved here as personalized creator memory.
+                </p>
+              </div>
+              <HistoryPanel history={analysisHistory} onSelect={handleSelectHistory} />
+            </>
+          )}
+
+          {view === 'agents' && (
+            <DevMode
+              isOpen
+              inline
+              onClose={() => setView('dashboard')}
+              state={orchestratorState}
+              geminiKey={geminiKey}
+              youtubeKey={youtubeKey}
+            />
           )}
         </main>
       </div>
 
-      <button className="dev-toggle" onClick={() => setIsDevModeOpen(!isDevModeOpen)} title="Toggle Dev Mode">
-        <Settings2 size={24} color={isDevModeOpen ? 'var(--primary)' : 'var(--ink)'} />
-      </button>
-
-      <DevMode 
-        isOpen={isDevModeOpen} 
-        onClose={() => setIsDevModeOpen(false)} 
-        state={orchestratorState}
-        geminiKey={geminiKey}
-        youtubeKey={youtubeKey}
-      />
-
-      <SettingsModal 
+      <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         youtubeKey={youtubeKey}
@@ -210,7 +307,7 @@ function App() {
         mockMode={mockMode}
         setMockMode={setMockMode}
       />
-    </>
+    </div>
   );
 }
 

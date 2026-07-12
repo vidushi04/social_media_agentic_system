@@ -1,7 +1,12 @@
 export type AgentStatus = 'idle' | 'running' | 'completed' | 'error';
-import { fetchVideoMetrics, fetchVideoComments, formatNumber } from '../utils/youtube';
+import { fetchVideoMetrics, fetchVideoComments, formatNumber, extractVideoId } from '../utils/youtube';
 import { runContentDeconstructor, runAudienceSignalReader, runPatternDetector, runCoach } from '../utils/llm';
 import { buildHistoricalContext, saveAnalysisToKnowledgeBase } from '../utils/knowledgeBase';
+
+const thumbnailFromUrl = (videoUrl: string) => {
+  const id = extractVideoId(videoUrl);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : undefined;
+};
 
 export interface AgentState {
   id: string;
@@ -59,26 +64,37 @@ export class Orchestrator {
 
     if (mockMode) {
       await this.delay(1500);
-      this.setAgentStatus('data_collector', 'completed', { views: "1.2M", title: "Mock Video" }, { video_url: url });
-      this.setAgentStatus('deconstructor', 'completed', { hook_type: "Curiosity Gap" }, { title: "Mock Video", categoryName: "Mock Category", description: "Mock description", tags: [] });
-      this.setAgentStatus('audience', 'completed', { signal_type: "Positive" }, { comments: ["Great video!", "Loved this breakdown."] });
+      const mockCollector = {
+        views: '1.2M',
+        likes: '48K',
+        comments: '2.1K',
+        title: 'Mock Video',
+        channel: 'Demo Channel',
+        category: 'Education',
+        description: 'Mock description...',
+        tags: ['mock'],
+        thumbnailUrl: thumbnailFromUrl(url),
+      };
+      this.setAgentStatus('data_collector', 'completed', mockCollector, { video_url: url });
+      this.setAgentStatus('deconstructor', 'completed', { hook_type: 'Curiosity Gap', packaging_style: 'Question-led title' }, { title: 'Mock Video', categoryName: 'Mock Category', description: 'Mock description', tags: [] });
+      this.setAgentStatus('audience', 'completed', { signal_type: 'Positive', observation: 'Viewers engage with pacing cues.', confidence: 'Strong' }, { comments: ['Great video!', 'Loved this breakdown.'] });
       
       this.setAgentStatus('pattern', 'running', undefined, {
-        deconstructor: { hook_type: "Curiosity Gap" },
-        performance: { views: "1.2M", title: "Mock Video" },
-        audience: { signal_type: "Positive" }
+        deconstructor: { hook_type: 'Curiosity Gap' },
+        performance: mockCollector,
+        audience: { signal_type: 'Positive' }
       });
       await this.delay(1500);
-      const patternData = { actionable_pattern_found: true, pattern_type: "Weakness", craft_element: "Pacing", observation: "Viewers are dropping off during the mid-roll explanation." };
+      const patternData = { actionable_pattern_found: true, pattern_type: 'Weakness', craft_element: 'Pacing', observation: 'Viewers are dropping off during the mid-roll explanation.' };
       this.setAgentStatus('pattern', 'completed', patternData, {
-        deconstructor: { hook_type: "Curiosity Gap" },
-        performance: { views: "1.2M", title: "Mock Video" },
-        audience: { signal_type: "Positive" }
+        deconstructor: { hook_type: 'Curiosity Gap' },
+        performance: mockCollector,
+        audience: { signal_type: 'Positive' }
       });
 
       this.setAgentStatus('skill', 'running', undefined, patternData);
       await this.delay(1500);
-      const skillData = { skill: "Dynamic Mid-roll Transitions", why_it_matters: "Keeps retention high during naturally slow sections.", try_this: "Add B-roll or a visual pattern interrupt right as you begin your explanation." };
+      const skillData = { skill: 'Dynamic Mid-roll Transitions', why_it_matters: 'Keeps retention high during naturally slow sections.', try_this: 'Add B-roll or a visual pattern interrupt right as you begin your explanation.' };
       this.setAgentStatus('skill', 'completed', skillData, patternData);
       
       this.state.finalSkill = skillData;
@@ -114,6 +130,7 @@ export class Orchestrator {
           category: metrics.categoryName,
           description: metrics.description ? metrics.description.substring(0, 100) + '...' : '',
           tags: metrics.tags,
+          thumbnailUrl: metrics.thumbnailUrl || thumbnailFromUrl(url),
         };
         this.setAgentStatus('data_collector', 'completed', output);
         

@@ -22,6 +22,7 @@ interface DevModeProps {
   state: OrchestratorState | null;
   geminiKey: string;
   youtubeKey: string;
+  inline?: boolean;
 }
 
 type TabKey = 'diagram' | 'configuration';
@@ -128,7 +129,7 @@ const AgentNode = ({ agent, icon: Icon, isSelected, onSelect }: { agent?: AgentS
   );
 };
 
-export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, geminiKey, youtubeKey }) => {
+export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, geminiKey, youtubeKey, inline = false }) => {
   if (!isOpen) return null;
 
   const agents = state?.agents || {};
@@ -269,14 +270,16 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
   );
 
   return (
-    <div className={`dev-overlay ${isOpen ? 'open' : ''}`}>
+    <div className={`dev-overlay ${inline ? 'inline' : isOpen ? 'open' : ''}`}>
       <div className="flex-between" style={{ marginBottom: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
         <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.5rem', color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '1px' }}>
           <Terminal size={24} /> System Visualization
         </h2>
-        <button className="btn-icon" onClick={onClose} style={{ color: 'var(--ink)' }}>
-          <X size={32} />
-        </button>
+        {!inline && (
+          <button className="btn-icon" onClick={onClose} style={{ color: 'var(--ink)' }}>
+            <X size={32} />
+          </button>
+        )}
       </div>
 
       <div style={{ textAlign: 'center', marginBottom: '2rem', maxWidth: '1000px', margin: '0 auto 4rem auto' }}>
