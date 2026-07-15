@@ -134,6 +134,7 @@ p {
   to { opacity: 1; transform: translateY(0); }
 }
 
+
 .spinner {
   width: 40px;
   height: 40px;
@@ -604,6 +605,16 @@ button.btn-secondary:hover {
 }
 
 /* Modal Styles */
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -616,6 +627,7 @@ button.btn-secondary:hover {
   align-items: center;
   justify-content: center;
   padding: 16px;
+  animation: overlayFade 0.2s ease-out;
 }
 
 .modal-content {
@@ -625,6 +637,7 @@ button.btn-secondary:hover {
   border-radius: var(--rounded-lg); /* 32px */
   padding: 32px;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+  animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Agent Inspector modal: fixed size on desktop/laptop, fluid below */
@@ -711,7 +724,25 @@ button.btn-secondary:hover {
 .studio-topbar-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+}
+
+.studio-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--studio-ink);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.studio-menu-btn:hover {
+  background: #f2f2f2;
 }
 
 .studio-logo {
@@ -787,6 +818,11 @@ button.btn-secondary:hover {
   flex-direction: column;
   background: #ffffff;
   overflow-y: auto;
+}
+
+/* Scrim behind the mobile drawer; only rendered on mobile (open/close fades via Motion) */
+.studio-sidebar-scrim {
+  display: none;
 }
 
 .studio-sidebar-spacer {
@@ -874,6 +910,14 @@ button.btn-secondary:hover {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* Wrapper animated by Motion on view switch; mirrors studio-content stacking */
+.studio-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 0;
 }
 
 .studio-page-header {
@@ -1531,6 +1575,25 @@ button.btn-secondary:hover {
     display: none;
   }
 
+  /* Mobile: sidebar becomes a drawer over the content (slide in/out via Motion) */
+  .studio-sidebar.open {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1300;
+    box-shadow: 0 0 28px rgba(0, 0, 0, 0.2);
+  }
+
+  .studio-sidebar-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1299;
+  }
+
   .studio-search {
     display: none;
   }
@@ -1725,6 +1788,76 @@ button.btn-secondary:hover {
   border-radius: 0;
   overflow: visible;
   z-index: auto;
+}
+
+/* Micro-interactions: press feedback (transform-only) */
+.btn-gradient,
+.studio-see-more,
+.studio-ghost-btn,
+.studio-chip,
+.dev-tab,
+.studio-nav-item,
+.studio-menu-btn,
+.studio-past-delete,
+.config-list-item,
+button.btn-primary,
+button.btn-secondary {
+  will-change: transform;
+}
+
+.btn-gradient:active:not(:disabled),
+.studio-see-more:active,
+.studio-ghost-btn:active,
+.studio-chip:active:not(:disabled),
+.dev-tab:active,
+.studio-menu-btn:active,
+.studio-past-delete:active,
+.config-list-item:active,
+button.btn-primary:active:not(:disabled),
+button.btn-secondary:active {
+  transform: scale(0.96);
+}
+
+.studio-nav-item:active {
+  transform: scale(0.98);
+}
+
+/* Micro-interactions: hover lift (transform-only) */
+.agent-card {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.agent-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.studio-past-row {
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.studio-past-row:hover {
+  transform: translateY(-1px);
+}
+
+.studio-insight-card {
+  transition: box-shadow 0.2s ease;
+}
+
+.studio-insight-card:hover {
+  box-shadow: 0 4px 14px rgba(227, 33, 64, 0.08);
+}
+
+/* Reduced motion: collapse all CSS animation/transition to imperceptible durations.
+   Motion-driven animations are disabled separately via MotionConfig reducedMotion="user". */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Loading State */

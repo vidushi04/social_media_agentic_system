@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { Search, Menu, Video, BarChart3, PlaySquare, Users, Plus, ChevronRight, MoreVertical, User, Settings, MessageSquare } from 'lucide-react';
 import type { OrchestratorState } from './agents/Orchestrator';
 import { Orchestrator } from './agents/Orchestrator';
@@ -11,6 +12,21 @@ import emptyAnalysisIllustration from './assets/analyze-data.png';
 
 type View = 'dashboard' | 'history' | 'agents';
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  return isMobile;
+};
+
 const QUICK_TRY = [
   { label: 'Mr. Beast', url: 'https://www.youtube.com/watch?v=0e3GPea1Tyg' },
   { label: 'MKBHD Latest review', url: 'https://www.youtube.com/watch?v=iGeXGdYE7UE' },
@@ -20,6 +36,10 @@ const QUICK_TRY = [
 
 function App() {
   const [view, setView] = useState<View>('dashboard');
+  const isMobileView = useIsMobile();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
+    typeof window === 'undefined' ? true : window.innerWidth > 900
+  );
   const [analysisHistory, setAnalysisHistory] = useState(getAnalysisHistory());
   const [url, setUrl] = useState('');
   const [youtubeKey, setYoutubeKey] = useState(localStorage.getItem('YOUTUBE_API_KEY') || '');
@@ -93,6 +113,16 @@ function App() {
       views: entry.dataCollector?.views ?? '—',
     }));
 
+  const navigateTo = (nextView: View) => {
+    setView(nextView);
+    if (isMobileView) setIsSidebarOpen(false);
+  };
+
+  const openSettings = () => {
+    setIsSettingsOpen(true);
+    if (isMobileView) setIsSidebarOpen(false);
+  };
+
   const handleSelectHistory = (entry: AnalysisRecord) => {
     setSelectedHistory(entry);
     setUrl(entry.videoUrl);
@@ -110,10 +140,18 @@ function App() {
   };
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="studio-app">
       <header className="studio-topbar">
         <div className="studio-topbar-left">
-          <Menu size={24} color="var(--studio-ink)" />
+          <button
+            type="button"
+            className="studio-menu-btn"
+            aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            onClick={() => setIsSidebarOpen((open) => !open)}
+          >
+            <Menu size={24} />
+          </button>
           <h1 className="studio-logo">Trellis</h1>
         </div>
         <div className="studio-topbar-spacer" />
@@ -130,7 +168,27 @@ function App() {
       </header>
 
       <div className="studio-body">
-        <aside className="studio-sidebar">
+        <AnimatePresence initial={false}>
+        {isSidebarOpen && isMobileView && (
+          <motion.div
+            key="sidebar-scrim"
+            className="studio-sidebar-scrim"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        {isSidebarOpen && (
+        <motion.aside
+          key="sidebar"
+          className="studio-sidebar open"
+          initial={isMobileView ? { x: '-100%' } : { x: -24, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={isMobileView ? { x: '-100%' } : { x: -24, opacity: 0 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        >
           <div className="studio-channel">
             <div className="studio-channel-avatar">
               <User size={48} />
@@ -141,21 +199,21 @@ function App() {
           <nav className="studio-nav">
             <button
               className={`studio-nav-item ${view === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setView('dashboard')}
+              onClick={() => navigateTo('dashboard')}
             >
               <BarChart3 size={24} />
               Dashboard
             </button>
             <button
               className={`studio-nav-item ${view === 'history' ? 'active' : ''}`}
-              onClick={() => setView('history')}
+              onClick={() => navigateTo('history')}
             >
               <PlaySquare size={24} />
               Past Analysis
             </button>
             <button
               className={`studio-nav-item ${view === 'agents' ? 'active' : ''}`}
-              onClick={() => setView('agents')}
+              onClick={() => navigateTo('agents')}
             >
               <Users size={24} />
               Agents
@@ -163,7 +221,7 @@ function App() {
           </nav>
           <div className="studio-sidebar-spacer" />
           <nav className="studio-nav studio-nav-bottom">
-            <button className="studio-nav-item" onClick={() => setIsSettingsOpen(true)}>
+            <button className="studio-nav-item" onClick={openSettings}>
               <Settings size={24} />
               Settings
             </button>
@@ -172,9 +230,18 @@ function App() {
               Send feedback
             </button>
           </nav>
-        </aside>
+        </motion.aside>
+        )}
+        </AnimatePresence>
 
         <main className="studio-content">
+          <motion.div
+            key={view}
+            className="studio-view"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
           {view === 'dashboard' && (
             <>
               <div className="studio-page-header">
@@ -302,6 +369,7 @@ function App() {
               youtubeKey={youtubeKey}
             />
           )}
+          </motion.div>
         </main>
       </div>
 
@@ -316,6 +384,7 @@ function App() {
         setMockMode={setMockMode}
       />
     </div>
+    </MotionConfig>
   );
 }
 
