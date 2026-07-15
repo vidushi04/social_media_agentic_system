@@ -214,8 +214,8 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
   const configAgentId = useMemo(() => selectedAgentId || AGENT_ORDER[0], [selectedAgentId]);
   const selectedAgentConfig = AGENT_CONFIG[configAgentId];
   const inspectorModal = activeTab === 'diagram' && inspectorAgentId && selectedAgent && (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '880px' }}>
+    <div className="modal-overlay" onClick={() => setInspectorAgentId(null)}>
+      <div className="modal-content inspector-modal" onClick={(e) => e.stopPropagation()}>
         <div className="flex-between">
           <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '0.75rem', color: 'var(--studio-ink)', letterSpacing: 0 }}>
             Agent Inspector — {selectedAgent.name}

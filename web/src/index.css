@@ -627,6 +627,24 @@ button.btn-secondary:hover {
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
 }
 
+/* Agent Inspector modal: fixed size on desktop/laptop, fluid below */
+.inspector-modal {
+  width: 706px;
+  height: 706px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+  .inspector-modal {
+    width: 100%;
+    height: auto;
+    max-height: 90vh;
+  }
+}
+
 .btn-icon {
   background: transparent;
   border: none;
@@ -1221,10 +1239,21 @@ button.btn-secondary:hover {
   color: var(--studio-ink);
 }
 
+.studio-skill-banner {
+  gap: 4px;
+}
+
+.studio-skill-label {
+  margin: 0;
+  font-size: 11px;
+  color: var(--studio-mute);
+}
+
 .studio-skill-name {
   margin: 0;
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 600;
+  color: var(--studio-ink);
 }
 
 .studio-skill-cards {
@@ -1467,6 +1496,16 @@ button.btn-secondary:hover {
   }
 }
 
+@media (max-width: 1200px) {
+  .dev-split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .config-layout {
+    grid-template-columns: 220px 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .studio-sidebar {
     display: none;
@@ -1474,6 +1513,135 @@ button.btn-secondary:hover {
 
   .studio-search {
     display: none;
+  }
+
+  .studio-content {
+    padding: 16px 12px 32px;
+    gap: 16px;
+  }
+
+  .studio-page-title {
+    font-size: 26px;
+  }
+
+  .studio-page-tagline,
+  .studio-tagline-dot {
+    font-size: 18px;
+  }
+
+  .studio-page-tagline {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .studio-perf-title,
+  .studio-section-heading {
+    font-size: 20px;
+  }
+
+  .config-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .config-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .config-list-item {
+    width: auto;
+    flex-shrink: 0;
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 760px) {
+  .studio-topbar {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .studio-prompt-row {
+    flex-wrap: wrap;
+  }
+
+  .studio-prompt-input {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+
+  .studio-chips-row {
+    row-gap: 8px;
+  }
+
+  .studio-video-thumb {
+    height: auto;
+  }
+
+  .studio-past-row {
+    gap: 10px;
+  }
+
+  .studio-past-date {
+    display: none;
+  }
+
+  .studio-empty-illustration {
+    width: 200px;
+    height: 189px;
+  }
+
+  .studio-empty-illustration img.badge {
+    left: 73px;
+    top: 84px;
+    width: 72px;
+    height: 72px;
+  }
+
+  /* Agents pipeline: stack vertically, hide the absolute-positioned edges */
+  .pipeline-graph {
+    gap: 24px;
+    margin-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .pipeline-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .edge {
+    display: none;
+  }
+
+  .agent-card {
+    width: 100%;
+    max-width: 360px;
+    box-sizing: border-box;
+  }
+
+  .dev-overlay {
+    padding: 24px 16px;
+  }
+
+  .dev-overlay.inline {
+    padding: 0;
+  }
+
+  .dev-section-card {
+    padding: 12px 12px 20px;
+  }
+
+  .dev-tabs {
+    flex-wrap: wrap;
+  }
+
+  .modal-content {
+    padding: 20px;
+    border-radius: 16px;
   }
 }
 

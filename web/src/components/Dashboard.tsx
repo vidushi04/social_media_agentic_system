@@ -141,6 +141,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="studio-skills-col">
           <h3 className="studio-section-heading studio-heading-accent">Recommended Micro-Skill</h3>
+          {skillData.skill && (
+            <div className="studio-insight-card studio-skill-banner">
+              <p className="studio-skill-label">Micro-skill to learn</p>
+              <p className="studio-skill-name">{skillData.skill}</p>
+            </div>
+          )}
           <div className="studio-skill-cards">
             <div className="studio-insight-card">
               <h4 className="studio-card-heading">Why this Matters</h4>
