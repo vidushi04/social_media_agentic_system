@@ -6,9 +6,8 @@ import { DevMode } from './components/DevMode';
 import { Dashboard } from './components/Dashboard';
 import { HistoryPanel } from './components/HistoryPanel';
 import { SettingsModal } from './components/SettingsModal';
-import { getAnalysisHistory, type AnalysisRecord } from './utils/knowledgeBase';
-import emptyAnalysisIllustration from './assets/empty-analysis.svg';
-import emptyAnalysisBadge from './assets/empty-analysis-badge.svg';
+import { getAnalysisHistory, deleteAnalysisFromHistory, type AnalysisRecord } from './utils/knowledgeBase';
+import emptyAnalysisIllustration from './assets/analyze-data.png';
 
 type View = 'dashboard' | 'history' | 'agents';
 
@@ -98,6 +97,16 @@ function App() {
     setSelectedHistory(entry);
     setUrl(entry.videoUrl);
     setView('dashboard');
+  };
+
+  const handleDeleteHistory = (entry: AnalysisRecord) => {
+    const title = entry.dataCollector?.title || entry.videoUrl;
+    if (!window.confirm(`Delete the analysis of "${title}"? This cannot be undone.`)) return;
+    deleteAnalysisFromHistory(entry.timestamp);
+    setAnalysisHistory(getAnalysisHistory());
+    if (selectedHistory?.timestamp === entry.timestamp) {
+      setSelectedHistory(null);
+    }
   };
 
   return (
@@ -253,7 +262,6 @@ function App() {
                   <div className="studio-empty-state">
                     <div className="studio-empty-illustration">
                       <img className="base" src={emptyAnalysisIllustration} alt="" />
-                      <img className="badge" src={emptyAnalysisBadge} alt="" />
                     </div>
                     <div className="studio-empty-text">
                       <p className="studio-empty-title">No current analysis</p>
@@ -280,7 +288,7 @@ function App() {
                   Every analysis you run is saved here as personalized creator memory.
                 </p>
               </div>
-              <HistoryPanel history={analysisHistory} onSelect={handleSelectHistory} />
+              <HistoryPanel history={analysisHistory} onSelect={handleSelectHistory} onDelete={handleDeleteHistory} />
             </>
           )}
 

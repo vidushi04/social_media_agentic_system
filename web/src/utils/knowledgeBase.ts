@@ -74,6 +74,12 @@ export const buildKnowledgeBaseMarkdown = (history: AnalysisRecord[]): string =>
   return `${header}${entries.join('')}`;
 };
 
+export const deleteAnalysisFromHistory = (timestamp: string) => {
+  if (typeof window === 'undefined') return;
+  const nextHistory = getAnalysisHistory().filter(entry => entry.timestamp !== timestamp);
+  window.localStorage.setItem(ANALYSIS_HISTORY_KEY, JSON.stringify(nextHistory));
+};
+
 export const saveAnalysisToKnowledgeBase = (record: AnalysisRecord) => {
   if (typeof window === 'undefined') return;
   const current = getAnalysisHistory();

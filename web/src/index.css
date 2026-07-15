@@ -1450,6 +1450,26 @@ button.btn-secondary:hover {
   flex-shrink: 0;
 }
 
+.studio-past-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--studio-mute);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.studio-past-delete:hover {
+  background: #fdeef2;
+  color: var(--studio-grad-start);
+}
+
 .studio-past-actions {
   padding-top: 20px;
 }
@@ -1590,14 +1610,7 @@ button.btn-secondary:hover {
 
   .studio-empty-illustration {
     width: 200px;
-    height: 189px;
-  }
-
-  .studio-empty-illustration img.badge {
-    left: 73px;
-    top: 84px;
-    width: 72px;
-    height: 72px;
+    height: 200px;
   }
 
   /* Agents pipeline: stack vertically, hide the absolute-positioned edges */
@@ -1659,20 +1672,13 @@ button.btn-secondary:hover {
 .studio-empty-illustration {
   position: relative;
   width: 270px;
-  height: 255px;
+  height: 270px;
 }
 
 .studio-empty-illustration img.base {
   width: 100%;
   height: 100%;
-}
-
-.studio-empty-illustration img.badge {
-  position: absolute;
-  left: 99px;
-  top: 113px;
-  width: 97px;
-  height: 97px;
+  object-fit: contain;
 }
 
 .studio-empty-text {

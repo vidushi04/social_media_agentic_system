@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import type { AnalysisRecord } from '../utils/knowledgeBase';
 import { formatAnalysisDate, getThumbnailFromUrl } from '../utils/thumbnail';
 
 interface HistoryPanelProps {
   history: AnalysisRecord[];
   onSelect?: (entry: AnalysisRecord) => void;
+  onDelete?: (entry: AnalysisRecord) => void;
   compact?: boolean;
   initialLimit?: number;
 }
@@ -12,6 +14,7 @@ interface HistoryPanelProps {
 export const HistoryPanel: React.FC<HistoryPanelProps> = ({
   history,
   onSelect,
+  onDelete,
   compact = false,
   initialLimit = 3,
 }) => {
@@ -57,11 +60,18 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
           'View Detailed Analysis';
 
         return (
-          <button
+          <div
             key={`${entry.timestamp}-${idx}`}
-            type="button"
+            role="button"
+            tabIndex={0}
             className="studio-past-row"
             onClick={() => onSelect?.(entry)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect?.(entry);
+              }
+            }}
           >
             <span className="studio-past-index">{idx + 1}</span>
             <div className="studio-past-thumb">
@@ -76,7 +86,21 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
               <span className="studio-past-url">{entry.videoUrl}</span>
             </div>
             <span className="studio-past-date">{formatAnalysisDate(entry.timestamp)}</span>
-          </button>
+            {onDelete && (
+              <button
+                type="button"
+                className="studio-past-delete"
+                title="Delete this analysis"
+                aria-label={`Delete analysis of ${title}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(entry);
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
         );
       })}
 
