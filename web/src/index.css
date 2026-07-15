@@ -237,13 +237,100 @@ button.btn-secondary:hover {
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  background: var(--surface-soft);
+  background: var(--studio-bg, #f9f9f9);
   z-index: 1000;
   padding: 64px 32px;
   overflow-y: auto;
   transform: translateY(100%);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--body);
+  color: var(--studio-ink, #0d0d0d);
+  font-family: 'Roboto', 'Inter', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dev-page-header {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.dev-page-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dev-section-card {
+  background: #ffffff;
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+  padding: 16px 20px 24px;
+  flex-shrink: 0;
+}
+
+.dev-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.dev-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 17px;
+  background: #f2f2f2;
+  color: var(--studio-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dev-tab:hover {
+  background: #e5e5e5;
+}
+
+.dev-tab.active {
+  background: linear-gradient(90deg, var(--studio-grad-start), var(--studio-grad-end));
+  color: #ffffff;
+}
+
+.dev-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 96px 24px;
+  text-align: center;
+  color: var(--studio-mute);
+}
+
+.dev-empty-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--studio-ink);
+  margin: 0;
+}
+
+.dev-empty-sub {
+  font-size: 11px;
+  color: var(--studio-mute);
+  margin: 0;
+}
+
+.dev-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .dev-overlay.open {
@@ -274,31 +361,33 @@ button.btn-secondary:hover {
 }
 
 .agent-card {
-  background: var(--surface-card);
-  border-radius: var(--rounded-md);
-  padding: 24px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
   width: 300px;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--studio-border);
   transition: all 0.3s ease;
   position: relative;
   z-index: 2;
   text-align: left;
   cursor: pointer;
+  font-family: inherit;
+  color: var(--studio-mute);
 }
 
 .agent-card.selected {
-  outline: 2px solid var(--primary);
-  box-shadow: 0 0 0 3px rgba(230, 0, 35, 0.2);
+  outline: 2px solid var(--studio-grad-start);
+  box-shadow: 0 0 0 3px rgba(227, 33, 64, 0.15);
 }
 
 .agent-card.running {
-  border-color: var(--primary);
-  box-shadow: 0 8px 20px rgba(230, 0, 35, 0.14);
+  border-color: var(--studio-grad-start);
+  box-shadow: 0 8px 20px rgba(227, 33, 64, 0.12);
 }
 
 .agent-card.completed {
-  background: var(--canvas);
-  color: var(--ink);
+  background: #ffffff;
+  color: var(--studio-ink);
 }
 
 .agent-header {
@@ -306,38 +395,37 @@ button.btn-secondary:hover {
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-  font-weight: 800;
-  font-size: 16px;
-  text-transform: uppercase;
-  color: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--studio-ink);
 }
 
 .agent-card.completed .agent-header {
-  color: var(--ink);
+  color: var(--studio-ink);
 }
 
 .agent-card.completed p, .agent-card.completed span {
-  color: var(--body);
+  color: #3d3d3d;
 }
 
 .agent-status {
-  font-size: 12px;
+  font-size: 11px;
   padding: 4px 12px;
-  border-radius: var(--rounded-full);
-  background: var(--secondary-bg);
-  color: var(--mute);
-  font-weight: 700;
-  text-transform: uppercase;
+  border-radius: 9999px;
+  background: #f2f2f2;
+  color: var(--studio-mute);
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
 .agent-card.running .agent-status {
-  background: var(--primary);
-  color: var(--on-dark);
+  background: linear-gradient(90deg, var(--studio-grad-start), var(--studio-grad-end));
+  color: #ffffff;
 }
 
 .agent-card.completed .agent-status {
-  background: var(--success-deep);
-  color: var(--on-dark);
+  background: #fdeef2;
+  color: var(--studio-grad-start);
 }
 
 .pipeline-graph {
@@ -345,12 +433,12 @@ button.btn-secondary:hover {
   flex-direction: column;
   align-items: center;
   gap: 64px;
-  margin-top: 48px;
+  margin-top: 40px;
   position: relative;
   max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
-  padding-bottom: 128px;
+  padding-bottom: 48px;
 }
 
 .dev-split-layout {
@@ -365,9 +453,9 @@ button.btn-secondary:hover {
 .inspector-panel,
 .config-details,
 .config-list {
-  background: var(--canvas);
-  border: 1px solid var(--hairline);
-  border-radius: var(--rounded-md);
+  background: #ffffff;
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
   padding: 16px;
 }
 
@@ -377,22 +465,22 @@ button.btn-secondary:hover {
 }
 
 .inspector-section {
-  border-top: 1px solid var(--hairline);
+  border-top: 1px solid var(--studio-border);
   padding-top: 12px;
   margin-top: 12px;
 }
 
 .inspector-section h4 {
   margin: 0 0 8px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--studio-ink);
 }
 
 .inspector-line {
   font-size: 13px;
-  color: var(--body);
+  color: #3d3d3d;
   margin: 0 0 6px;
 }
 
@@ -400,11 +488,12 @@ button.btn-secondary:hover {
   width: 100%;
   min-height: 120px;
   resize: vertical;
-  background: var(--surface-card);
-  border: 1px solid var(--hairline);
-  color: var(--ink);
-  border-radius: var(--rounded-sm);
+  background: var(--studio-bg, #f9f9f9);
+  border: 1px solid var(--studio-border);
+  color: var(--studio-ink);
+  border-radius: 8px;
   padding: 10px;
+  font-family: inherit;
   font-size: 13px;
   line-height: 1.4;
   box-sizing: border-box;
@@ -418,29 +507,38 @@ button.btn-secondary:hover {
   width: 100%;
   text-align: left;
   margin-bottom: 8px;
-  background: var(--surface-card);
-  color: var(--ink);
-  border: 1px solid var(--hairline);
-  border-radius: var(--rounded-sm);
+  background: #f2f2f2;
+  color: var(--studio-ink);
+  border: 1px solid transparent;
+  border-radius: 8px;
   padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s;
+}
+
+.config-list-item:hover {
+  background: #e5e5e5;
 }
 
 .config-list-item.active {
-  border-color: var(--primary);
-  background: rgba(230, 0, 35, 0.08);
+  border-color: var(--studio-grad-start);
+  background: #fdeef2;
+  color: var(--studio-grad-start);
 }
 
 .config-monospace {
   margin: 0;
-  background: var(--surface-card);
-  border: 1px solid var(--hairline);
-  border-radius: var(--rounded-sm);
+  background: var(--studio-bg, #f9f9f9);
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
   padding: 14px;
-  color: var(--body);
+  color: #3d3d3d;
   white-space: pre-wrap;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 14px;
+  font-family: 'Roboto', 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
   line-height: 1.6;
 }
 
@@ -455,12 +553,12 @@ button.btn-secondary:hover {
 /* Graph Edges */
 .edge {
   position: absolute;
-  background: var(--hairline);
+  background: var(--studio-border);
   z-index: 3;
 }
 
 .edge.active {
-  background: var(--primary);
+  background: var(--studio-grad-start);
 }
 
 .edge-arrow::after {
@@ -471,12 +569,12 @@ button.btn-secondary:hover {
   transform: translateX(-50%);
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 6px solid var(--hairline);
+  border-top: 6px solid var(--studio-border);
   transition: border-top-color 0.3s ease;
 }
 
 .edge-arrow.active::after {
-  border-top-color: var(--primary);
+  border-top-color: var(--studio-grad-start);
 }
 
 /* 1 to 2 Split */
@@ -1447,10 +1545,10 @@ button.btn-secondary:hover {
   height: auto;
   min-height: 0;
   transform: none;
-  padding: 24px;
-  background: #ffffff;
-  border: 1px solid var(--studio-border);
-  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   overflow: visible;
   z-index: auto;
 }
