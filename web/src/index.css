@@ -1466,3 +1466,587 @@ f
   background: var(--canvas);
   border-radius: var(--rounded-md);
 }
+
+/* =====================================================================
+   RESTORED STYLES
+   Rules the components actively use that were dropped in the last
+   index.css refactor. Kept in one block so they're easy to review.
+   ===================================================================== */
+
+/* --- Topbar hamburger button --- */
+.studio-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--studio-ink);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.studio-menu-btn:hover {
+  background: #f2f2f2;
+}
+
+/* --- Mobile drawer scrim (fades in/out via Motion); hidden on desktop --- */
+.studio-sidebar-scrim {
+  display: none;
+}
+
+/* --- Wrapper animated by Motion on view switch; mirrors studio-content stacking --- */
+.studio-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 0;
+}
+
+/* --- Past Analysis delete button --- */
+.studio-past-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--studio-mute);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.studio-past-delete:hover {
+  background: #fdeef2;
+  color: var(--studio-grad-start);
+}
+
+/* --- Recommended micro-skill banner (Dashboard) --- */
+.studio-skill-banner {
+  gap: 4px;
+}
+
+.studio-skill-label {
+  margin: 0;
+  font-size: 11px;
+  color: var(--studio-mute);
+}
+
+.studio-skill-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--studio-ink);
+}
+
+/* --- Agents page layout (DevMode inline) --- */
+.dev-overlay.inline {
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.dev-page-header {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.dev-page-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dev-section-card {
+  background: #ffffff;
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+  padding: 16px 20px 24px;
+  flex-shrink: 0;
+}
+
+.dev-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.dev-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 17px;
+  background: #f2f2f2;
+  color: var(--studio-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dev-tab:hover {
+  background: #e5e5e5;
+}
+
+.dev-tab.active {
+  background: linear-gradient(90deg, var(--studio-grad-start), var(--studio-grad-end));
+  color: #ffffff;
+}
+
+.dev-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 96px 24px;
+  text-align: center;
+  color: var(--studio-mute);
+}
+
+.dev-empty-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--studio-ink);
+  margin: 0;
+}
+
+.dev-empty-sub {
+  font-size: 11px;
+  color: var(--studio-mute);
+  margin: 0;
+}
+
+.dev-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Modal entrance animations + Agent Inspector fixed size --- */
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-overlay {
+  animation: overlayFade 0.2s ease-out;
+}
+
+.modal-content {
+  animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inspector-modal {
+  width: 706px;
+  height: 706px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* --- Empty-state illustration (single square image, no badge overlay) --- */
+.studio-empty-illustration {
+  height: 270px;
+}
+
+.studio-empty-illustration img.base {
+  object-fit: contain;
+}
+
+/* --- Micro-interactions: press feedback (transform-only) --- */
+.btn-gradient:active:not(:disabled),
+.studio-see-more:active,
+.studio-ghost-btn:active,
+.studio-chip:active:not(:disabled),
+.dev-tab:active,
+.studio-menu-btn:active,
+.studio-past-delete:active,
+.config-list-item:active,
+button.btn-primary:active:not(:disabled),
+button.btn-secondary:active {
+  transform: scale(0.96);
+}
+
+.studio-nav-item:active {
+  transform: scale(0.98);
+}
+
+/* --- Micro-interactions: hover lift (transform-only) --- */
+.agent-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.studio-past-row {
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.studio-past-row:hover {
+  transform: translateY(-1px);
+}
+
+.studio-insight-card {
+  transition: box-shadow 0.2s ease;
+}
+
+.studio-insight-card:hover {
+  box-shadow: 0 4px 14px rgba(227, 33, 64, 0.08);
+}
+
+/* --- Responsive breakpoints --- */
+@media (max-width: 1200px) {
+  .dev-split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .config-layout {
+    grid-template-columns: 220px 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Mobile: sidebar becomes a drawer over the content (slide in/out via Motion) */
+  .studio-sidebar.open {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1300;
+    box-shadow: 0 0 28px rgba(0, 0, 0, 0.2);
+  }
+
+  .studio-sidebar-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1299;
+  }
+
+  .studio-content {
+    padding: 16px 12px 32px;
+    gap: 16px;
+  }
+
+  .studio-view {
+    gap: 16px;
+  }
+
+  .studio-page-title {
+    font-size: 26px;
+  }
+
+  .studio-page-tagline,
+  .studio-tagline-dot {
+    font-size: 18px;
+  }
+
+  .studio-page-tagline {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .studio-perf-title,
+  .studio-section-heading {
+    font-size: 20px;
+  }
+
+  .config-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .config-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .config-list-item {
+    width: auto;
+    flex-shrink: 0;
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 760px) {
+  .studio-topbar {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .studio-prompt-row {
+    flex-wrap: wrap;
+  }
+
+  .studio-prompt-input {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+
+  .studio-chips-row {
+    row-gap: 8px;
+  }
+
+  .studio-video-thumb {
+    height: auto;
+  }
+
+  .studio-past-row {
+    gap: 10px;
+  }
+
+  .studio-past-date {
+    display: none;
+  }
+
+  .studio-empty-illustration {
+    width: 200px;
+    height: 200px;
+  }
+
+  /* Agents pipeline: stack vertically, hide the absolute-positioned edges */
+  .pipeline-graph {
+    gap: 24px;
+    margin-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .pipeline-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .edge {
+    display: none;
+  }
+
+  .agent-card {
+    width: 100%;
+    max-width: 360px;
+    box-sizing: border-box;
+  }
+
+  .dev-overlay {
+    padding: 24px 16px;
+  }
+
+  .dev-overlay.inline {
+    padding: 0;
+  }
+
+  .dev-section-card {
+    padding: 12px 12px 20px;
+  }
+
+  .dev-tabs {
+    flex-wrap: wrap;
+  }
+
+  .inspector-modal {
+    width: 100%;
+    height: auto;
+    max-height: 90vh;
+  }
+
+  .modal-content {
+    padding: 20px;
+    border-radius: 16px;
+  }
+}
+
+/* --- Agents page: studio visual language (white cards, gradient accents) --- */
+.dev-overlay {
+  background: var(--studio-bg, #f9f9f9);
+  color: var(--studio-ink, #0d0d0d);
+  font-family: 'Roboto', 'Inter', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.agent-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid var(--studio-border);
+  color: var(--studio-mute);
+  font-family: inherit;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.agent-card.selected {
+  outline: 2px solid var(--studio-grad-start);
+  box-shadow: 0 0 0 3px rgba(227, 33, 64, 0.15);
+}
+
+.agent-card.running {
+  border-color: var(--studio-grad-start);
+  box-shadow: 0 8px 20px rgba(227, 33, 64, 0.12);
+}
+
+.agent-card.completed {
+  background: #ffffff;
+  color: var(--studio-ink);
+}
+
+.agent-header {
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: none;
+  color: var(--studio-ink);
+}
+
+.agent-card.completed .agent-header {
+  color: var(--studio-ink);
+}
+
+.agent-card.completed p,
+.agent-card.completed span {
+  color: #3d3d3d;
+}
+
+.agent-status {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: #f2f2f2;
+  color: var(--studio-mute);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.agent-card.running .agent-status {
+  background: linear-gradient(90deg, var(--studio-grad-start), var(--studio-grad-end));
+  color: #ffffff;
+}
+
+.agent-card.completed .agent-status {
+  background: #fdeef2;
+  color: var(--studio-grad-start);
+}
+
+.pipeline-graph {
+  margin-top: 40px;
+  padding-bottom: 48px;
+}
+
+.edge {
+  background: var(--studio-border);
+}
+
+.edge.active {
+  background: var(--studio-grad-start);
+}
+
+.edge-arrow::after {
+  border-top-color: var(--studio-border);
+}
+
+.edge-arrow.active::after {
+  border-top-color: var(--studio-grad-start);
+}
+
+.inspector-panel,
+.config-details,
+.config-list {
+  background: #ffffff;
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+}
+
+.inspector-section {
+  border-top: 1px solid var(--studio-border);
+}
+
+.inspector-section h4 {
+  font-size: 15px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--studio-ink);
+}
+
+.inspector-line {
+  color: #3d3d3d;
+}
+
+.inspector-textarea {
+  background: var(--studio-bg, #f9f9f9);
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.config-list-item {
+  background: #f2f2f2;
+  color: var(--studio-ink);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.config-list-item:hover {
+  background: #e5e5e5;
+}
+
+.config-list-item.active {
+  border-color: var(--studio-grad-start);
+  background: #fdeef2;
+  color: var(--studio-grad-start);
+}
+
+.config-monospace {
+  background: var(--studio-bg, #f9f9f9);
+  border: 1px solid var(--studio-border);
+  border-radius: 8px;
+  color: #3d3d3d;
+  font-family: 'Roboto', 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+}
+
+/* --- Pulse for the running-agent "Processing..." icon (class was referenced but never defined) --- */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 1.4s ease-in-out infinite;
+}
+
+/* --- Reduced motion: collapse CSS animation/transition to imperceptible durations.
+   Motion-driven animations are disabled separately via MotionConfig reducedMotion="user". --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
