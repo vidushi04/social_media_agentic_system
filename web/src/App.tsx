@@ -12,6 +12,14 @@ import emptyAnalysisIllustration from './assets/analyze-data.png';
 
 type View = 'dashboard' | 'history' | 'agents';
 
+// Production API keys never reach the browser: without manually entered keys,
+// all YouTube/Gemini calls go through the /api serverless proxies, which read
+// YOUTUBE_API_KEY and GEMINI_API_KEY from server-side env vars.
+
+// Temporarily hidden for the final version — flip to true to bring the topbar
+// "Api Config" button back.
+const SHOW_API_CONFIG_BUTTON = false;
+
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
@@ -50,13 +58,10 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [mockMode, setMockMode] = useState(() => {
+    // Default to real analyses (served via the /api key proxies); the stored
+    // flag lets the settings modal re-enable mock mode for development.
     const stored = localStorage.getItem('MOCK_MODE');
-    if (stored !== null) return stored === 'true';
-    const hasKeys = Boolean(
-      localStorage.getItem('YOUTUBE_API_KEY')?.trim() &&
-      localStorage.getItem('GEMINI_API_KEY')?.trim()
-    );
-    return !hasKeys;
+    return stored === 'true';
   });
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
@@ -74,11 +79,6 @@ function App() {
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) return;
-
-    if (!mockMode && (!youtubeKey.trim() || !geminiKey.trim())) {
-      setIsSettingsOpen(true);
-      return;
-    }
 
     setErrorMsg('');
     setSelectedHistory(null);
@@ -160,10 +160,12 @@ function App() {
           <span>Search across your channel</span>
         </div>
         <div className="studio-topbar-spacer" />
-        <button className="studio-create-btn" onClick={() => setIsSettingsOpen(true)} title="API Settings">
-          <Video size={22} />
-          Api Config
-        </button>
+        {SHOW_API_CONFIG_BUTTON && (
+          <button className="studio-create-btn" onClick={() => setIsSettingsOpen(true)} title="API Settings">
+            <Video size={22} />
+            Api Config
+          </button>
+        )}
         <div className="studio-avatar" />
       </header>
 

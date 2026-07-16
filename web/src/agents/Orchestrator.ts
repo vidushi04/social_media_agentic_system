@@ -115,10 +115,9 @@ export class Orchestrator {
     let metricsData: any = null;
     let commentsData: string[] = [];
 
-    if (!youtubeKey) {
-      this.setAgentStatus('data_collector', 'error', { error: 'YouTube API Key is required.' });
-      dataCollectorPromise = Promise.reject('No YouTube Key');
-    } else {
+    // An empty key is fine: the fetch utils fall back to the /api server proxy,
+    // which holds the production key.
+    {
       dataCollectorPromise = fetchVideoMetrics(url, youtubeKey).then(async (metrics) => {
         metricsData = metrics;
         const output = {
@@ -146,12 +145,7 @@ export class Orchestrator {
     let deconstructorPromise: Promise<any>;
     let audiencePromise: Promise<any>;
 
-    if (!geminiKey) {
-      this.setAgentStatus('deconstructor', 'error', { error: 'Gemini API Key is required.' });
-      this.setAgentStatus('audience', 'error', { error: 'Gemini API Key is required.' });
-      deconstructorPromise = Promise.reject('No Gemini Key');
-      audiencePromise = Promise.reject('No Gemini Key');
-    } else {
+    {
       // The deconstructor and audience reader need data from the data collector phase first in this real setup
       // So we must wait for dataCollectorPromise to resolve to get the title, category, and comments.
       deconstructorPromise = dataCollectorPromise.then(() => {

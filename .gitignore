@@ -1,0 +1,10 @@
+# Server-side secrets for the /api functions (used by `vercel dev`)
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+node_modules
+.DS_Store

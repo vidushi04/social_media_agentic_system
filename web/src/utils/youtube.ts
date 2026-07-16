@@ -16,6 +16,18 @@ export const extractVideoId = (url: string): string | null => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
+// With a manually entered key (settings modal) we call the YouTube API directly.
+// Without one, requests go through /api/youtube so the production key stays server-side.
+const youtubeFetch = (endpoint: string, params: Record<string, string>, apiKey: string): Promise<Response> => {
+  const qs = new URLSearchParams(params);
+  if (apiKey.trim()) {
+    qs.set('key', apiKey.trim());
+    return fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${qs}`);
+  }
+  qs.set('endpoint', endpoint);
+  return fetch(`/api/youtube?${qs}`);
+};
+
 export const fetchVideoMetrics = async (url: string, apiKey: string): Promise<VideoMetrics> => {
   const videoId = extractVideoId(url);
   if (!videoId) {
@@ -23,9 +35,7 @@ export const fetchVideoMetrics = async (url: string, apiKey: string): Promise<Vi
   }
 
   // 1. Fetch Video Details
-  const videoResponse = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${apiKey}`
-  );
+  const videoResponse = await youtubeFetch('videos', { part: 'snippet,statistics', id: videoId }, apiKey);
   
   if (!videoResponse.ok) {
     const errorData = await videoResponse.json();
@@ -46,9 +56,7 @@ export const fetchVideoMetrics = async (url: string, apiKey: string): Promise<Vi
   let categoryName = 'Unknown Category';
   if (categoryId) {
     try {
-      const categoryResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/videoCategories?part=snippet&id=${categoryId}&key=${apiKey}`
-      );
+      const categoryResponse = await youtubeFetch('videoCategories', { part: 'snippet', id: categoryId }, apiKey);
       if (categoryResponse.ok) {
         const categoryData = await categoryResponse.json();
         if (categoryData.items && categoryData.items.length > 0) {
@@ -82,8 +90,10 @@ export const fetchVideoComments = async (url: string, apiKey: string): Promise<s
   if (!videoId) return [];
 
   try {
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&key=${apiKey}&maxResults=30`
+    const response = await youtubeFetch(
+      'commentThreads',
+      { part: 'snippet', videoId, maxResults: '30' },
+      apiKey
     );
     if (!response.ok) return [];
     

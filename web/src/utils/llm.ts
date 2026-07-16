@@ -6,6 +6,8 @@ import {
   COACH_PROMPT
 } from '../agents/prompts';
 
+const GEMINI_MODEL = 'gemini-2.5-pro';
+
 let aiInstance: GoogleGenAI | null = null;
 let activeApiKey: string | null = null;
 let geminiQueue: Promise<void> = Promise.resolve();
@@ -39,10 +41,47 @@ const scheduleGeminiRequest = async <T>(task: () => Promise<T>): Promise<T> => {
   return pending;
 };
 
+// With a manually entered key (settings modal) we call Gemini directly via the SDK.
+// Without one, requests go through /api/gemini so the production key stays server-side.
+const generateJson = async (
+  apiKey: string,
+  input: string,
+  systemInstruction: string,
+  responseSchema: any
+): Promise<any> => {
+  const text = await scheduleGeminiRequest(async () => {
+    if (apiKey.trim()) {
+      const ai = getAI(apiKey.trim());
+      const response = await ai.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: input,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema
+        }
+      });
+      return response.text || '{}';
+    }
+
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input, systemInstruction, responseSchema })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || 'Gemini request failed.');
+    }
+    return data.text || '{}';
+  });
+
+  return JSON.parse(text);
+};
+
 // --- Agent Invocation Functions ---
 
 export const runContentDeconstructor = async (apiKey: string, videoMetrics: any, historicalContext: string = '') => {
-  const ai = getAI(apiKey);
   const input = [
     `Creator Historical Knowledge:\n${historicalContext || 'No prior context available.'}`,
     '',
@@ -51,54 +90,33 @@ export const runContentDeconstructor = async (apiKey: string, videoMetrics: any,
     `Description: ${videoMetrics.description}`,
     `Tags: ${videoMetrics.tags?.join(', ')}`
   ].join('\n');
-  
-  const response = await scheduleGeminiRequest(() => ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: input,
-    config: {
-      systemInstruction: DECONSTRUCTOR_PROMPT,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          hook_type: { type: Type.STRING, description: "Hypothesized hook type based on title" },
-          packaging_style: { type: Type.STRING, description: "How the title and category package the value" },
-          click_curiosity_gap: { type: Type.STRING, description: "Does the title create a curiosity gap? Describe it." },
-        },
-      }
-    }
-  }));
-  
-  return JSON.parse(response.text || '{}');
+
+  return generateJson(apiKey, input, DECONSTRUCTOR_PROMPT, {
+    type: Type.OBJECT,
+    properties: {
+      hook_type: { type: Type.STRING, description: "Hypothesized hook type based on title" },
+      packaging_style: { type: Type.STRING, description: "How the title and category package the value" },
+      click_curiosity_gap: { type: Type.STRING, description: "Does the title create a curiosity gap? Describe it." },
+    },
+  });
 };
 
 export const runAudienceSignalReader = async (apiKey: string, comments: string[], historicalContext: string = '') => {
-  const ai = getAI(apiKey);
   const commentsInput = comments.length > 0 ? comments.join('\n---\n') : 'No comments available for this video.';
   const input = [
     `Creator Historical Knowledge:\n${historicalContext || 'No prior context available.'}`,
     '',
     commentsInput
   ].join('\n');
-  
-  const response = await scheduleGeminiRequest(() => ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: input,
-    config: {
-      systemInstruction: AUDIENCE_READER_PROMPT,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          signal_type: { type: Type.STRING, description: "e.g., Emerging Theme, Shift Detected" },
-          observation: { type: Type.STRING, description: "What you noticed in audience behavior" },
-          confidence: { type: Type.STRING, description: "Emerging, Developing, or Strong" }
-        },
-      }
-    }
-  }));
-  
-  return JSON.parse(response.text || '{}');
+
+  return generateJson(apiKey, input, AUDIENCE_READER_PROMPT, {
+    type: Type.OBJECT,
+    properties: {
+      signal_type: { type: Type.STRING, description: "e.g., Emerging Theme, Shift Detected" },
+      observation: { type: Type.STRING, description: "What you noticed in audience behavior" },
+      confidence: { type: Type.STRING, description: "Emerging, Developing, or Strong" }
+    },
+  });
 };
 
 export const runPatternDetector = async (
@@ -108,7 +126,6 @@ export const runPatternDetector = async (
   audienceData: any,
   historicalContext: string = ''
 ) => {
-  const ai = getAI(apiKey);
   const input = `
 Creator Historical Knowledge:
 ${historicalContext || 'No prior context available.'}
@@ -117,52 +134,31 @@ Deconstructor Output: ${JSON.stringify(deconstructorData)}
 Performance Output: ${JSON.stringify(performanceData)}
 Audience Output: ${JSON.stringify(audienceData)}
   `;
-  
-  const response = await scheduleGeminiRequest(() => ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: input,
-    config: {
-      systemInstruction: PATTERN_DETECTOR_PROMPT,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          pattern_type: { type: Type.STRING, description: "Strength or Weakness" },
-          observation: { type: Type.STRING, description: "The core pattern observed across craft and metrics" },
-          craft_element: { type: Type.STRING, description: "Which specific element is involved" },
-          actionable_pattern_found: { type: Type.BOOLEAN, description: "Set to true if there is a pattern to act on" }
-        },
-      }
-    }
-  }));
-  
-  return JSON.parse(response.text || '{}');
+
+  return generateJson(apiKey, input, PATTERN_DETECTOR_PROMPT, {
+    type: Type.OBJECT,
+    properties: {
+      pattern_type: { type: Type.STRING, description: "Strength or Weakness" },
+      observation: { type: Type.STRING, description: "The core pattern observed across craft and metrics" },
+      craft_element: { type: Type.STRING, description: "Which specific element is involved" },
+      actionable_pattern_found: { type: Type.BOOLEAN, description: "Set to true if there is a pattern to act on" }
+    },
+  });
 };
 
 export const runCoach = async (apiKey: string, patternData: any, historicalContext: string = '') => {
-  const ai = getAI(apiKey);
   const input = [
     `Creator Historical Knowledge:\n${historicalContext || 'No prior context available.'}`,
     '',
     `Current Pattern Data:\n${JSON.stringify(patternData)}`
   ].join('\n');
-  
-  const response = await scheduleGeminiRequest(() => ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: input,
-    config: {
-      systemInstruction: COACH_PROMPT,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          skill: { type: Type.STRING, description: "Name of the micro-skill" },
-          why_it_matters: { type: Type.STRING, description: "1-2 sentences explaining the craft principle" },
-          try_this: { type: Type.STRING, description: "A specific, concrete suggestion for their next post" }
-        },
-      }
-    }
-  }));
-  
-  return JSON.parse(response.text || '{}');
+
+  return generateJson(apiKey, input, COACH_PROMPT, {
+    type: Type.OBJECT,
+    properties: {
+      skill: { type: Type.STRING, description: "Name of the micro-skill" },
+      why_it_matters: { type: Type.STRING, description: "1-2 sentences explaining the craft principle" },
+      try_this: { type: Type.STRING, description: "A specific, concrete suggestion for their next post" }
+    },
+  });
 };
