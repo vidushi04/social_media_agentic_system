@@ -55,7 +55,7 @@ export class Orchestrator {
     });
     this.state.finalSkill = undefined;
     this.updateState({ ...this.state });
-    const historicalContext = buildHistoricalContext(8);
+    const historicalContext = await buildHistoricalContext(8);
 
     // Parallel Phase
     this.setAgentStatus('deconstructor', 'running');
@@ -99,7 +99,7 @@ export class Orchestrator {
       
       this.state.finalSkill = skillData;
       this.updateState({ ...this.state });
-      saveAnalysisToKnowledgeBase({
+      await saveAnalysisToKnowledgeBase({
         timestamp: new Date().toISOString(),
         videoUrl: url,
         dataCollector: this.state.agents.data_collector.output,
@@ -213,7 +213,7 @@ export class Orchestrator {
         this.updateState({ ...this.state });
       }
 
-      saveAnalysisToKnowledgeBase({
+      await saveAnalysisToKnowledgeBase({
         timestamp: new Date().toISOString(),
         videoUrl: url,
         dataCollector: dataCollectorData,

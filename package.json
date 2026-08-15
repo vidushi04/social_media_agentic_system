@@ -1,0 +1,12 @@
+{
+  "name": "social-media-agentic-system",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Root package.json — dependencies here are for the Vercel /api serverless functions (admin API), not the frontend (see web/package.json for that).",
+  "scripts": {
+    "dev:full": "vercel dev --listen 3001"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3"
+  }
+}

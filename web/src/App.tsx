@@ -1,13 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
-import { Search, Menu, Video, BarChart3, PlaySquare, Users, Plus, ChevronRight, MoreVertical, User, Settings, MessageSquare } from 'lucide-react';
+import { Search, Menu, BarChart3, PlaySquare, Users, Plus, ChevronRight, MoreVertical, User, MessageSquare, LogOut } from 'lucide-react';
 import type { OrchestratorState } from './agents/Orchestrator';
 import { Orchestrator } from './agents/Orchestrator';
 import { DevMode } from './components/DevMode';
 import { Dashboard } from './components/Dashboard';
 import { HistoryPanel } from './components/HistoryPanel';
-import { SettingsModal } from './components/SettingsModal';
+import { LoginScreen } from './components/LoginScreen';
+import { AccessGateScreen } from './components/AccessGateScreen';
+import { YoutubeHandlePrompt } from './components/YoutubeHandlePrompt';
 import { getAnalysisHistory, deleteAnalysisFromHistory, type AnalysisRecord } from './utils/knowledgeBase';
+import { fetchAppSettings } from './utils/appSettings';
+import { useAuth } from './auth/AuthContext';
 import emptyAnalysisIllustration from './assets/analyze-data.png';
 
 type View = 'dashboard' | 'history' | 'agents';
@@ -16,9 +20,8 @@ type View = 'dashboard' | 'history' | 'agents';
 // all YouTube/Gemini calls go through the /api serverless proxies, which read
 // YOUTUBE_API_KEY and GEMINI_API_KEY from server-side env vars.
 
-// Temporarily hidden for the final version — flip to true to bring the topbar
-// "Api Config" button back.
-const SHOW_API_CONFIG_BUTTON = false;
+// Set to true to show the sidebar "Send feedback" item (hidden for now).
+const SHOW_SEND_FEEDBACK = false;
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(
@@ -43,26 +46,18 @@ const QUICK_TRY = [
 ];
 
 function App() {
+  const { loading: authLoading, isLocalMode, user, profile, profileReady, isAccessApproved, signOut } = useAuth();
   const [view, setView] = useState<View>('dashboard');
   const isMobileView = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
     typeof window === 'undefined' ? true : window.innerWidth > 900
   );
-  const [analysisHistory, setAnalysisHistory] = useState(getAnalysisHistory());
+  const [analysisHistory, setAnalysisHistory] = useState<AnalysisRecord[]>([]);
   const [url, setUrl] = useState('');
-  const [youtubeKey, setYoutubeKey] = useState(localStorage.getItem('YOUTUBE_API_KEY') || '');
-  const [geminiKey, setGeminiKey] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [orchestratorState, setOrchestratorState] = useState<OrchestratorState | null>(null);
   const [selectedHistory, setSelectedHistory] = useState<AnalysisRecord | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [mockMode, setMockMode] = useState(() => {
-    // Default to real analyses (served via the /api key proxies); the stored
-    // flag lets the settings modal re-enable mock mode for development.
-    const stored = localStorage.getItem('MOCK_MODE');
-    return stored === 'true';
-  });
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
 
@@ -73,8 +68,13 @@ function App() {
   }
 
   useEffect(() => {
-    setAnalysisHistory(getAnalysisHistory());
-  }, []);
+    if (authLoading) return;
+    getAnalysisHistory().then(setAnalysisHistory);
+    if (!user) {
+      setOrchestratorState(null);
+      setSelectedHistory(null);
+    }
+  }, [authLoading, user?.id]);
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,8 +84,9 @@ function App() {
     setSelectedHistory(null);
     setIsProcessing(true);
     try {
-      await orchestratorRef.current?.processUrl(url, youtubeKey, geminiKey, mockMode);
-      setAnalysisHistory(getAnalysisHistory());
+      const settings = await fetchAppSettings();
+      await orchestratorRef.current?.processUrl(url, '', '', settings.mock_mode_enabled);
+      setAnalysisHistory(await getAnalysisHistory());
       setView('dashboard');
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred while processing the video. Please check the URL.');
@@ -118,30 +119,66 @@ function App() {
     if (isMobileView) setIsSidebarOpen(false);
   };
 
-  const openSettings = () => {
-    setIsSettingsOpen(true);
-    if (isMobileView) setIsSidebarOpen(false);
-  };
-
   const handleSelectHistory = (entry: AnalysisRecord) => {
     setSelectedHistory(entry);
     setUrl(entry.videoUrl);
     setView('dashboard');
   };
 
-  const handleDeleteHistory = (entry: AnalysisRecord) => {
+  const handleDeleteHistory = async (entry: AnalysisRecord) => {
     const title = entry.dataCollector?.title || entry.videoUrl;
     if (!window.confirm(`Delete the analysis of "${title}"? This cannot be undone.`)) return;
-    deleteAnalysisFromHistory(entry.timestamp);
-    setAnalysisHistory(getAnalysisHistory());
-    if (selectedHistory?.timestamp === entry.timestamp) {
+    await deleteAnalysisFromHistory(entry.id);
+    setAnalysisHistory(await getAnalysisHistory());
+    if (selectedHistory?.id === entry.id) {
       setSelectedHistory(null);
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="studio-app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
+  if (!isLocalMode && !user) {
+    return <LoginScreen />;
+  }
+
+  if (!isLocalMode && user && profile && !isAccessApproved) {
+    return <AccessGateScreen status={profile.access_status} email={profile.email} />;
+  }
+
+  if (!isLocalMode && user && !profileReady) {
+    return (
+      <div className="studio-app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
+
+  if (!isLocalMode && user && profileReady && !profile) {
+    return (
+      <div className="studio-app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="modal-content" style={{ maxWidth: '420px', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '1.1rem', color: 'var(--ink)', margin: '0 0 0.75rem' }}>Could not load your profile</h2>
+          <p style={{ color: 'var(--mute)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+            You are signed in, but your account profile could not be loaded. Try signing out and back in.
+          </p>
+          <button type="button" className="btn-secondary" style={{ marginTop: '1.25rem' }} onClick={signOut}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <MotionConfig reducedMotion="user">
     <div className="studio-app">
+      <YoutubeHandlePrompt />
       <header className="studio-topbar">
         <div className="studio-topbar-left">
           <button
@@ -160,13 +197,6 @@ function App() {
           <span>Search across your channel</span>
         </div>
         <div className="studio-topbar-spacer" />
-        {SHOW_API_CONFIG_BUTTON && (
-          <button className="studio-create-btn" onClick={() => setIsSettingsOpen(true)} title="API Settings">
-            <Video size={22} />
-            Api Config
-          </button>
-        )}
-        <div className="studio-avatar" />
       </header>
 
       <div className="studio-body">
@@ -196,7 +226,9 @@ function App() {
               <User size={48} />
             </div>
             <p className="studio-channel-label">Your channel</p>
-            <p className="studio-channel-name">Vidushi Bissa</p>
+            <p className="studio-channel-name">
+              {isLocalMode ? 'Local mode' : profile?.youtube_username || user?.email || 'Your channel'}
+            </p>
           </div>
           <nav className="studio-nav">
             <button
@@ -223,14 +255,18 @@ function App() {
           </nav>
           <div className="studio-sidebar-spacer" />
           <nav className="studio-nav studio-nav-bottom">
-            <button className="studio-nav-item" onClick={openSettings}>
-              <Settings size={24} />
-              Settings
-            </button>
-            <button className="studio-nav-item" type="button">
-              <MessageSquare size={24} />
-              Send feedback
-            </button>
+            {SHOW_SEND_FEEDBACK && (
+              <button className="studio-nav-item" type="button">
+                <MessageSquare size={24} />
+                Send feedback
+              </button>
+            )}
+            {!isLocalMode && (
+              <button className="studio-nav-item" type="button" onClick={signOut}>
+                <LogOut size={24} />
+                Sign out
+              </button>
+            )}
           </nav>
         </motion.aside>
         )}
@@ -367,24 +403,13 @@ function App() {
               inline
               onClose={() => setView('dashboard')}
               state={orchestratorState}
-              geminiKey={geminiKey}
-              youtubeKey={youtubeKey}
+              geminiKey=""
+              youtubeKey=""
             />
           )}
           </motion.div>
         </main>
       </div>
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        youtubeKey={youtubeKey}
-        setYoutubeKey={setYoutubeKey}
-        geminiKey={geminiKey}
-        setGeminiKey={setGeminiKey}
-        mockMode={mockMode}
-        setMockMode={setMockMode}
-      />
     </div>
     </MotionConfig>
   );
