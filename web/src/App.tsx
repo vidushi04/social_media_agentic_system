@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
-import { Search, Menu, BarChart3, PlaySquare, Users, Plus, ChevronRight, MoreVertical, User, MessageSquare, LogOut } from 'lucide-react';
+import { Search, Menu, BarChart3, PlaySquare, Users, User, MessageSquare, LogOut } from 'lucide-react';
 import type { OrchestratorState } from './agents/Orchestrator';
 import { Orchestrator } from './agents/Orchestrator';
 import { DevMode } from './components/DevMode';
@@ -37,13 +37,6 @@ const useIsMobile = () => {
 
   return isMobile;
 };
-
-const QUICK_TRY = [
-  { label: 'Mr. Beast', url: 'https://www.youtube.com/watch?v=0e3GPea1Tyg' },
-  { label: 'MKBHD Latest review', url: 'https://www.youtube.com/watch?v=iGeXGdYE7UE' },
-  { label: 'EV Car Review', url: 'https://www.youtube.com/watch?v=k8A0qPG0nag' },
-  { label: 'Art School Adm', url: 'https://www.youtube.com/watch?v=iGeXGdYE7UE' },
-];
 
 function App() {
   const { loading: authLoading, isLocalMode, user, profile, profileReady, isAccessApproved, signOut } = useAuth();
@@ -309,24 +302,6 @@ function App() {
                   </button>
                 </div>
                 <div>
-                  <div className="studio-chips-row" style={{ marginBottom: '18px' }}>
-                    <button type="button" className="studio-add-btn" title="Add a quick-try link">
-                      <Plus size={14} />
-                    </button>
-                    {QUICK_TRY.map((item) => (
-                      <button
-                        key={item.label}
-                        type="button"
-                        className="studio-chip"
-                        onClick={() => setUrl(item.url)}
-                        disabled={isProcessing}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                    <ChevronRight size={16} color="var(--studio-mute)" />
-                    <MoreVertical size={16} color="var(--studio-mute)" />
-                  </div>
                   <p className="studio-fineprint">
                     <span className="mute">AI can make mistakes. Please double check. Use discretion before you create or use ideas.</span>
                     <span className="link">Learn more</span>
