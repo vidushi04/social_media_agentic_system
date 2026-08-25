@@ -50,7 +50,7 @@ export const YoutubeHandlePrompt: React.FC = () => {
             What's your YouTube channel?
           </h2>
           <button
-            className="btn-icon"
+            className="modal-close-btn"
             onClick={handleDismiss}
             type="button"
             disabled={saving}

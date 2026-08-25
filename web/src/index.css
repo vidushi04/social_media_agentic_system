@@ -528,7 +528,33 @@ button.btn-secondary:hover {
   padding: 32px;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
 }
-f
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  box-shadow: none;
+}
+
+.modal-close-btn:hover,
+.modal-close-btn:focus,
+.modal-close-btn:focus-visible {
+  background: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.modal-close-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .btn-icon {
   background: transparent;
   border: none;
