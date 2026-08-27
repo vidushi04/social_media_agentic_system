@@ -9,6 +9,7 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { LoginScreen } from './components/LoginScreen';
 import { AccessGateScreen } from './components/AccessGateScreen';
 import { YoutubeHandlePrompt } from './components/YoutubeHandlePrompt';
+import { FeedbackModal } from './components/FeedbackModal';
 import { getAnalysisHistory, deleteAnalysisFromHistory, type AnalysisRecord } from './utils/knowledgeBase';
 import { fetchAppSettings } from './utils/appSettings';
 import { useAuth } from './auth/AuthContext';
@@ -20,8 +21,8 @@ type View = 'dashboard' | 'history' | 'agents';
 // all YouTube/Gemini calls go through the /api serverless proxies, which read
 // YOUTUBE_API_KEY and GEMINI_API_KEY from server-side env vars.
 
-// Set to true to show the sidebar "Send feedback" item (hidden for now).
-const SHOW_SEND_FEEDBACK = false;
+// Set to true to show the sidebar "Send feedback" item.
+const SHOW_SEND_FEEDBACK = true;
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(
@@ -51,6 +52,7 @@ function App() {
   const [selectedHistory, setSelectedHistory] = useState<AnalysisRecord | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
 
@@ -106,6 +108,15 @@ function App() {
       title: entry.dataCollector?.title || entry.videoUrl,
       views: entry.dataCollector?.views ?? '—',
     }));
+
+  const handleResetToEmptyState = () => {
+    setUrl('');
+    setErrorMsg('');
+    setSelectedHistory(null);
+    setOrchestratorState(null);
+    setView('dashboard');
+    if (isMobileView) setIsSidebarOpen(false);
+  };
 
   const navigateTo = (nextView: View) => {
     setView(nextView);
@@ -172,6 +183,12 @@ function App() {
     <MotionConfig reducedMotion="user">
     <div className="studio-app">
       <YoutubeHandlePrompt />
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        userId={!isLocalMode ? user?.id : undefined}
+        userEmail={!isLocalMode ? (profile?.email || user?.email || undefined) : undefined}
+      />
       <header className="studio-topbar">
         <div className="studio-topbar-left">
           <button
@@ -182,7 +199,14 @@ function App() {
           >
             <Menu size={24} />
           </button>
-          <h1 className="studio-logo">Trellis</h1>
+          <button
+            type="button"
+            className="studio-logo studio-logo-btn"
+            onClick={handleResetToEmptyState}
+            aria-label="Start a new analysis"
+          >
+            Trellis
+          </button>
         </div>
         <div className="studio-topbar-spacer" />
         <div className="studio-search">
@@ -249,7 +273,7 @@ function App() {
           <div className="studio-sidebar-spacer" />
           <nav className="studio-nav studio-nav-bottom">
             {SHOW_SEND_FEEDBACK && (
-              <button className="studio-nav-item" type="button">
+              <button className="studio-nav-item" type="button" onClick={() => setIsFeedbackOpen(true)}>
                 <MessageSquare size={24} />
                 Send feedback
               </button>
@@ -330,12 +354,7 @@ function App() {
                     videoMetrics={activeMetrics}
                     videoUrl={activeVideoUrl}
                     topContent={topContent}
-                    onReset={() => {
-                      setUrl('');
-                      setErrorMsg('');
-                      setSelectedHistory(null);
-                      setOrchestratorState(null);
-                    }}
+                    onReset={handleResetToEmptyState}
                     onGoToAgents={() => setView('agents')}
                   />
                 ) : (

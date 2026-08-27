@@ -26,6 +26,10 @@ interface DevModeProps {
 }
 
 type TabKey = 'diagram' | 'configuration';
+
+// Agent Configuration isn't relevant to end users yet — kept in code for
+// internal debugging but hidden from the tab bar until we need it again.
+const SHOW_AGENT_CONFIG = false;
 type SessionRecord = Record<string, { editedInput: string; expectedOutput: string; isLoading: boolean; error?: string }>;
 
 const AGENT_ORDER = ['data_collector', 'deconstructor', 'audience', 'pattern', 'skill'];
@@ -290,12 +294,14 @@ export const DevMode: React.FC<DevModeProps> = ({ isOpen, onClose, state, gemini
         <button type="button" className={`dev-tab ${activeTab === 'diagram' ? 'active' : ''}`} onClick={() => setActiveTab('diagram')}>
           <Terminal size={15} /> System Diagram
         </button>
-        <button type="button" className={`dev-tab ${activeTab === 'configuration' ? 'active' : ''}`} onClick={() => setActiveTab('configuration')}>
-          Agent Configuration
-        </button>
+        {SHOW_AGENT_CONFIG && (
+          <button type="button" className={`dev-tab ${activeTab === 'configuration' ? 'active' : ''}`} onClick={() => setActiveTab('configuration')}>
+            Agent Configuration
+          </button>
+        )}
       </div>
 
-      {activeTab === 'diagram' ? (
+      {(SHOW_AGENT_CONFIG ? activeTab : 'diagram') === 'diagram' ? (
         !state ? (
           <div className="dev-empty-state">
             <Activity size={48} style={{ opacity: 0.4, marginBottom: '16px' }} />

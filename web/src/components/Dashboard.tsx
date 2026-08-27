@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2, MessageSquare, ThumbsUp, ChevronUp } from 'lucide-react';
+import { Eye, MessageSquare, ThumbsUp, TrendingUp, Sparkles, Lightbulb, ListChecks, Star } from 'lucide-react';
 import { getThumbnailFromUrl } from '../utils/thumbnail';
 
 interface TopContentItem {
@@ -16,6 +16,16 @@ interface DashboardProps {
   onReset: () => void;
   onGoToAgents?: () => void;
 }
+
+// Splits a long-form paragraph into short bullet points so it reads as
+// scannable takeaways instead of a wall of text.
+const toBullets = (text?: string): string[] => {
+  if (!text) return [];
+  return text
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9])/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
 
 export const Dashboard: React.FC<DashboardProps> = ({
   skillData,
@@ -42,85 +52,47 @@ export const Dashboard: React.FC<DashboardProps> = ({
     ? topContent
     : [{ title, views }];
 
+  const actionPlanBullets = toBullets(skillData.try_this);
+
   return (
     <div className="studio-analysis" style={{ animation: 'fadeIn 0.5s ease-out' }}>
       <div className="studio-perf-hero">
-        <div className="studio-video-thumb">
-          {thumbnail ? (
-            <img src={thumbnail} alt={title} />
-          ) : (
-            <div className="studio-video-thumb-fallback">{title}</div>
-          )}
-          {title && <div className="studio-video-thumb-caption">{title}</div>}
-        </div>
+        <div className="studio-video-col studio-insight-card">
+          <p className="studio-video-title">{title}</p>
 
-        <div className="studio-metrics-panel">
-          <div className="studio-metrics-icons">
-            <span className="studio-metric-pill">
-              <BarChart2 size={20} />
-              {views}
-            </span>
-            <span className="studio-metric-pill">
-              <MessageSquare size={20} />
-              {comments}
-            </span>
-            <span className="studio-metric-pill">
-              <ThumbsUp size={20} />
-              {likes}
-            </span>
-            <span className="studio-metrics-spacer" />
-            <ChevronUp size={16} color="var(--studio-mute)" />
+          <div className="studio-video-thumb">
+            {thumbnail ? (
+              <img src={thumbnail} alt={title} />
+            ) : (
+              <div className="studio-video-thumb-fallback">{title}</div>
+            )}
           </div>
 
           <div className="studio-stat-rows">
             <div className="studio-stat-row">
+              <Eye size={16} color="var(--studio-mute)" />
               <span>Views</span>
               <span className="studio-stat-value">{views}</span>
             </div>
             <div className="studio-stat-row">
-              <span>Likes</span>
-              <span className="studio-stat-value">{likes}</span>
-            </div>
-            <div className="studio-stat-row">
+              <MessageSquare size={16} color="var(--studio-mute)" />
               <span>Comments</span>
               <span className="studio-stat-value">{comments}</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="studio-insights-row">
-        <div className="studio-insight-card studio-diagnosis-card">
-          <h3 className="studio-section-heading studio-heading-accent">AI Diagnosis</h3>
-          <p className="studio-insight-body">
-            {patternData?.observation || 'No pattern observation available.'}
-          </p>
-
-          <div className="studio-divider" />
-
-          <div className="studio-summary-block">
-            <p className="studio-summary-title">Summary</p>
-            <p className="studio-summary-sub">
-              {patternData?.pattern_type
-                ? `${patternData.pattern_type}${patternData.craft_element ? ` · ${patternData.craft_element}` : ''}`
-                : 'This analysis'}
-            </p>
-            <div className="studio-summary-row">
-              <span>Views</span>
-              <span className="studio-stat-value">{views}</span>
-              <span className="studio-trend" />
-            </div>
-            <div className="studio-summary-row">
+            <div className="studio-stat-row">
+              <ThumbsUp size={16} color="var(--studio-mute)" />
               <span>Likes</span>
               <span className="studio-stat-value">{likes}</span>
-              <span className="studio-trend" />
             </div>
           </div>
 
           <div className="studio-divider" />
 
           <div className="studio-summary-block">
-            <p className="studio-summary-title">Top content</p>
+            <p className="studio-summary-title studio-summary-title-icon">
+              <TrendingUp size={15} />
+              Top content
+            </p>
             <p className="studio-summary-sub">Recent analyses · Views</p>
             {topRows.map((item, idx) => (
               <div className="studio-summary-row" key={`${item.title}-${idx}`}>
@@ -140,21 +112,55 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="studio-skills-col">
-          <h3 className="studio-section-heading studio-heading-accent">Recommended Micro-Skill</h3>
-          {skillData.skill && (
-            <div className="studio-insight-card studio-skill-banner">
-              <p className="studio-skill-label">Micro-skill to learn</p>
-              <p className="studio-skill-name">{skillData.skill}</p>
+          <div className="studio-diagnosis-card">
+            <div className="studio-icon-row">
+              <Sparkles size={24} className="studio-icon-accent" />
+              <div className="studio-icon-row-body">
+                <h3 className="studio-section-heading studio-heading-accent">AI diagnosis</h3>
+                <p className="studio-insight-body">
+                  {patternData?.observation || 'No pattern observation available.'}
+                </p>
+              </div>
             </div>
-          )}
-          <div className="studio-skill-cards">
-            <div className="studio-insight-card">
-              <h4 className="studio-card-heading">Why this Matters</h4>
-              <p className="studio-insight-body">{skillData.why_it_matters}</p>
+          </div>
+
+          <div className="studio-skill-card">
+            <div className="studio-icon-row">
+              <Lightbulb size={24} className="studio-icon-accent" />
+              <div className="studio-icon-row-body">
+                <h3 className="studio-section-heading studio-heading-accent">Trellis recommended micro-skill</h3>
+                <p className="studio-skill-name">{skillData.skill || 'No micro-skill recommended yet.'}</p>
+              </div>
             </div>
-            <div className="studio-insight-card">
-              <h4 className="studio-card-heading">Action Plan for next Upload</h4>
-              <p className="studio-insight-body">{skillData.try_this}</p>
+
+            <div className="studio-divider" />
+
+            <div className="studio-skill-subcard">
+              <div className="studio-icon-row">
+                <ListChecks size={24} className="studio-icon-muted" />
+                <div className="studio-icon-row-body">
+                  <h4 className="studio-card-heading">Action plan for next upload</h4>
+                  {actionPlanBullets.length > 1 ? (
+                    <ul className="studio-bullet-list">
+                      {actionPlanBullets.map((line, idx) => (
+                        <li key={idx}>{line}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="studio-insight-body">{skillData.try_this || 'No action suggestion yet.'}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="studio-skill-subcard">
+              <div className="studio-icon-row">
+                <Star size={24} className="studio-icon-muted" />
+                <div className="studio-icon-row-body">
+                  <h4 className="studio-card-heading">Why this skill matters</h4>
+                  <p className="studio-insight-body">{skillData.why_it_matters || 'No explanation available yet.'}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
