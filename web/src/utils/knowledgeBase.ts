@@ -44,6 +44,8 @@ const getAnalysisHistoryLocal = (): AnalysisRecord[] => {
   return safeJsonParse<AnalysisRecord[]>(window.localStorage.getItem(ANALYSIS_HISTORY_KEY), []);
 };
 
+export const hasLocalAnalysisHistory = (): boolean => getAnalysisHistoryLocal().length > 0;
+
 const saveAnalysisToKnowledgeBaseLocal = (record: AnalysisRecord) => {
   if (typeof window === 'undefined') return;
   const current = getAnalysisHistoryLocal();

@@ -14,6 +14,8 @@ create table if not exists public.profiles (
   access_status text not null default 'pending'
     check (access_status in ('pending', 'approved', 'rejected')),
   approved_at timestamptz,
+  onboarding_status text not null default 'pending'
+    check (onboarding_status in ('pending', 'completed', 'skipped')),
   created_at timestamptz not null default now()
 );
 

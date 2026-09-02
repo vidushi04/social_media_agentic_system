@@ -10,8 +10,14 @@ import { LoginScreen } from './components/LoginScreen';
 import { AccessGateScreen } from './components/AccessGateScreen';
 import { YoutubeHandlePrompt } from './components/YoutubeHandlePrompt';
 import { FeedbackModal } from './components/FeedbackModal';
+import { FeatureOnboardingModal } from './components/FeatureOnboardingModal';
 import { getAnalysisHistory, deleteAnalysisFromHistory, type AnalysisRecord } from './utils/knowledgeBase';
 import { fetchAppSettings } from './utils/appSettings';
+import {
+  persistOnboardingStatus,
+  shouldShowGuestOnboarding,
+  shouldShowProfileOnboarding,
+} from './utils/onboarding';
 import { useAuth } from './auth/AuthContext';
 import emptyAnalysisIllustration from './assets/analyze-data.png';
 
@@ -40,7 +46,7 @@ const useIsMobile = () => {
 };
 
 function App() {
-  const { loading: authLoading, isLocalMode, user, profile, profileReady, isAccessApproved, signOut } = useAuth();
+  const { loading: authLoading, isLocalMode, user, profile, profileReady, isAccessApproved, signOut, refreshProfile } = useAuth();
   const [view, setView] = useState<View>('dashboard');
   const isMobileView = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
@@ -53,6 +59,7 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [onboardingClosed, setOnboardingClosed] = useState(false);
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
 
@@ -70,6 +77,10 @@ function App() {
       setSelectedHistory(null);
     }
   }, [authLoading, user?.id]);
+
+  useEffect(() => {
+    setOnboardingClosed(false);
+  }, [user?.id, isLocalMode]);
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,6 +150,23 @@ function App() {
     }
   };
 
+  const finishOnboarding = async (status: 'completed' | 'skipped') => {
+    setOnboardingClosed(true);
+    await persistOnboardingStatus({
+      status,
+      isLocalMode,
+      userId: user?.id,
+    });
+    if (!isLocalMode) {
+      await refreshProfile();
+    }
+  };
+
+  const needsOnboarding = isLocalMode
+    ? shouldShowGuestOnboarding()
+    : Boolean(profile && isAccessApproved && shouldShowProfileOnboarding(profile));
+  const showOnboarding = needsOnboarding && !onboardingClosed;
+
   if (authLoading) {
     return (
       <div className="studio-app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -175,6 +203,18 @@ function App() {
             Sign out
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (showOnboarding) {
+    return (
+      <div className="studio-app">
+        <FeatureOnboardingModal
+          isOpen
+          onComplete={() => { void finishOnboarding('completed'); }}
+          onSkip={() => { void finishOnboarding('skipped'); }}
+        />
       </div>
     );
   }

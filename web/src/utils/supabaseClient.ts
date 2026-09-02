@@ -12,6 +12,8 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl as string, supabaseAnonKey as string)
   : null;
 
+export type OnboardingStatus = 'pending' | 'completed' | 'skipped';
+
 export interface Profile {
   user_id: string;
   email: string;
@@ -19,6 +21,7 @@ export interface Profile {
   youtube_username_confirmed: boolean;
   access_status: 'pending' | 'approved' | 'rejected';
   approved_at: string | null;
+  onboarding_status?: OnboardingStatus | null;
   created_at: string;
 }
 
