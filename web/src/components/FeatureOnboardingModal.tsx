@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import illustration1 from '../assets/onboarding/illustration-1.svg';
 import illustration2 from '../assets/onboarding/illustration-2.svg';
 import illustration3 from '../assets/onboarding/illustration-3.svg';
@@ -76,8 +77,8 @@ export const FeatureOnboardingModal: React.FC<FeatureOnboardingModalProps> = ({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="onboarding-top">
-          <button type="button" className="onboarding-skip" onClick={onSkip}>
-            Skip
+          <button type="button" className="modal-close-btn" onClick={onSkip} aria-label="Skip">
+            <X size={20} />
           </button>
         </div>
 

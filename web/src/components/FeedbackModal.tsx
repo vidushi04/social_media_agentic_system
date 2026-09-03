@@ -65,29 +65,44 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
 
   return (
     <div className="modal-overlay" onClick={resetAndClose}>
-      <div className="modal-content" style={{ animation: 'fadeIn 0.2s ease-out', maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex-between" style={{ marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--ink)' }}>Send feedback</h2>
-          <button className="modal-close-btn" onClick={resetAndClose} type="button" aria-label="Close">
+      <div
+        className="modal-content feedback-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="feedback-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="feedback-modal-top">
+          <button type="button" className="modal-close-btn" onClick={resetAndClose} aria-label="Close">
             <X size={20} />
           </button>
         </div>
 
         {submitted ? (
-          <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-            <p style={{ fontSize: '1rem', color: 'var(--ink)', marginBottom: '0.5rem' }}>Thanks for sharing!</p>
-            <p style={{ fontSize: '0.9rem', color: 'var(--mute)' }}>Your feedback helps us improve Trellis for every creator.</p>
-            <button type="button" className="btn-primary" style={{ marginTop: '1.25rem' }} onClick={resetAndClose}>
-              Done
-            </button>
+          <div className="feedback-modal-thanks">
+            <h2 id="feedback-title" className="onboarding-title">
+              Thanks for sharing!
+            </h2>
+            <p className="onboarding-body">
+              Your feedback helps us improve Trellis for every creator.
+            </p>
+            <div className="onboarding-bottom">
+              <button type="button" className="onboarding-next" onClick={resetAndClose}>
+                Done
+              </button>
+            </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+          <form className="feedback-modal-form" onSubmit={handleSubmit}>
+            <h2 id="feedback-title" className="onboarding-title">
+              Send feedback
+            </h2>
+
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--body)', marginBottom: '0.5rem', fontWeight: 600 }}>
-                How would you rate your overall experience? <span style={{ color: 'var(--error)' }}>*</span>
+              <label className="feedback-modal-label" htmlFor="feedback-rating">
+                How would you rate your overall experience? <span className="feedback-required">*</span>
               </label>
-              <div className="feedback-rating">
+              <div className="feedback-rating" id="feedback-rating">
                 {[1, 2, 3, 4, 5].map((value) => (
                   <button
                     key={value}
@@ -96,17 +111,18 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
                     aria-label={`${value} star${value > 1 ? 's' : ''}`}
                     onClick={() => setRating(value)}
                   >
-                    <Star size={26} fill={value <= rating ? '#e32140' : 'none'} color={value <= rating ? '#e32140' : '#c7c7c7'} />
+                    <Star size={26} fill={value <= rating ? '#000' : 'none'} color={value <= rating ? '#000' : '#e5e5e5'} />
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--body)', marginBottom: '0.5rem', fontWeight: 600 }}>
+              <label className="feedback-modal-label" htmlFor="feedback-useful">
                 Which feature do you find most useful?
               </label>
               <input
+                id="feedback-useful"
                 type="text"
                 className="text-input"
                 value={mostUsefulFeature}
@@ -116,13 +132,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--body)', marginBottom: '0.5rem', fontWeight: 600 }}>
+              <label className="feedback-modal-label" htmlFor="feedback-improve">
                 What's one thing we could improve?
               </label>
               <textarea
+                id="feedback-improve"
                 className="text-input"
                 rows={3}
-                style={{ resize: 'vertical', fontFamily: 'inherit' }}
                 value={improvementSuggestion}
                 onChange={(e) => setImprovementSuggestion(e.target.value)}
                 placeholder="Tell us what's missing or confusing..."
@@ -130,8 +146,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--body)', marginBottom: '0.5rem', fontWeight: 600 }}>
-                Would you recommend Trellis to another creator? <span style={{ color: 'var(--error)' }}>*</span>
+              <label className="feedback-modal-label">
+                Would you recommend Trellis to another creator? <span className="feedback-required">*</span>
               </label>
               <div className="feedback-choice-row">
                 <button
@@ -158,10 +174,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
               </div>
             </div>
 
-            {error && <p style={{ color: 'var(--error)', fontSize: '0.85rem', margin: 0 }}>{error}</p>}
+            {error && <p className="feedback-modal-error">{error}</p>}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-              <button type="button" className="btn-secondary" onClick={resetAndClose}>Cancel</button>
+            <div className="onboarding-bottom">
+              <button type="button" className="onboarding-skip" onClick={resetAndClose}>
+                Cancel
+              </button>
               <button type="submit" className="onboarding-next" disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Submit'}
               </button>
