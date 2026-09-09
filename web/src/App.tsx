@@ -19,7 +19,7 @@ import {
   shouldShowProfileOnboarding,
 } from './utils/onboarding';
 import { useAuth } from './auth/AuthContext';
-import emptyAnalysisIllustration from './assets/analyze-data.png';
+import emptyAnalysisIllustration from './assets/no-current-analysis.svg';
 
 type View = 'dashboard' | 'history' | 'agents';
 

@@ -1807,20 +1807,25 @@ button.btn-secondary:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 27px;
+  gap: 16px;
   padding: 24px 0;
-  min-height: 420px;
+  min-height: clamp(280px, 42vh, 420px);
 }
 
 .studio-empty-illustration {
   position: relative;
-  width: 270px;
-  height: 255px;
+  width: clamp(180px, 52vw, 560px);
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 560 / 285;
+  overflow: hidden;
 }
 
 .studio-empty-illustration img.base {
+  display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 
 .studio-empty-illustration img.badge {
@@ -2085,11 +2090,7 @@ button.btn-secondary:hover {
   box-sizing: border-box;
 }
 
-/* --- Empty-state illustration (single square image, no badge overlay) --- */
-.studio-empty-illustration {
-  height: 270px;
-}
-
+/* --- Empty-state illustration (scales with viewport, keeps 560:490 art ratio) --- */
 .studio-empty-illustration img.base {
   object-fit: contain;
 }
@@ -2240,11 +2241,6 @@ button.btn-secondary:active {
 
   .studio-past-date {
     display: none;
-  }
-
-  .studio-empty-illustration {
-    width: 200px;
-    height: 200px;
   }
 
   /* Agents pipeline: stack vertically, hide the absolute-positioned edges */
