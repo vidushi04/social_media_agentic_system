@@ -380,7 +380,6 @@ function App() {
               )}
 
               <div className="studio-perf-card">
-                <h3 className="studio-perf-title">Latest video performance</h3>
                 {isProcessing ? (
                   <div className="loading-state" style={{ flex: 1, animation: 'fadeIn 0.3s ease-out' }}>
                     <div className="spinner"></div>
@@ -388,15 +387,18 @@ function App() {
                     <p style={{ color: 'var(--studio-mute)', margin: 0, fontSize: '1rem' }}>{getActiveAgentName()}</p>
                   </div>
                 ) : activeSkill ? (
-                  <Dashboard
-                    skillData={activeSkill}
-                    patternData={activePattern}
-                    videoMetrics={activeMetrics}
-                    videoUrl={activeVideoUrl}
-                    topContent={topContent}
-                    onReset={handleResetToEmptyState}
-                    onGoToAgents={() => setView('agents')}
-                  />
+                  <>
+                    <h3 className="studio-perf-title">Latest video performance</h3>
+                    <Dashboard
+                      skillData={activeSkill}
+                      patternData={activePattern}
+                      videoMetrics={activeMetrics}
+                      videoUrl={activeVideoUrl}
+                      topContent={topContent}
+                      onReset={handleResetToEmptyState}
+                      onGoToAgents={() => setView('agents')}
+                    />
+                  </>
                 ) : (
                   <div className="studio-empty-state">
                     <div className="studio-empty-illustration">

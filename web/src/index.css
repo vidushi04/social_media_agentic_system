@@ -1847,7 +1847,7 @@ button.btn-secondary:hover {
   font-size: 24px;
   font-weight: 500;
   color: var(--studio-ink);
-  letter-spacing: 0;
+  letter-spacing: -1.2px;
   margin: 0;
 }
 
