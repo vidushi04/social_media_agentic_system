@@ -1817,7 +1817,7 @@ button.btn-secondary:hover {
   width: clamp(180px, 52vw, 560px);
   max-width: 100%;
   height: auto;
-  aspect-ratio: 560 / 285;
+  aspect-ratio: 560 / 406;
   overflow: hidden;
 }
 
