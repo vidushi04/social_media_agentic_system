@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
-import { Search, Menu, BarChart3, PlaySquare, Users, User, MessageSquare, LogOut } from 'lucide-react';
+import { Search, Menu, BarChart3, PlaySquare, Users, User, MessageSquare, LogOut, LogIn } from 'lucide-react';
 import type { OrchestratorState } from './agents/Orchestrator';
 import { Orchestrator } from './agents/Orchestrator';
 import { DevMode } from './components/DevMode';
@@ -47,7 +47,7 @@ const useIsMobile = () => {
 };
 
 function App() {
-  const { loading: authLoading, isLocalMode, user, profile, profileReady, isAccessApproved, signOut, refreshProfile } = useAuth();
+  const { loading: authLoading, isLocalMode, isSupabaseConfigured, user, profile, profileReady, isAccessApproved, signOut, exitLocalMode, refreshProfile } = useAuth();
   const [view, setView] = useState<View>('dashboard');
   const isMobileView = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
@@ -352,6 +352,12 @@ function App() {
               <button className="studio-nav-item" type="button" onClick={() => setIsFeedbackOpen(true)}>
                 <MessageSquare size={24} />
                 Send feedback
+              </button>
+            )}
+            {isLocalMode && isSupabaseConfigured && (
+              <button className="studio-nav-item" type="button" onClick={exitLocalMode}>
+                <LogIn size={24} />
+                Sign in
               </button>
             )}
             {!isLocalMode && (

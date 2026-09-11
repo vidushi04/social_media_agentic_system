@@ -22,6 +22,7 @@ interface AuthContextValue {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   continueInLocalMode: () => void;
+  exitLocalMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -142,6 +143,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLocalModeChosen(true);
   };
 
+  const exitLocalMode = () => {
+    window.localStorage.removeItem(LOCAL_MODE_KEY);
+    setLocalModeChosen(false);
+  };
+
   const value: AuthContextValue = {
     isSupabaseConfigured,
     loading,
@@ -155,6 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithGoogle,
     signOut,
     continueInLocalMode,
+    exitLocalMode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
