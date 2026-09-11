@@ -1,8 +1,10 @@
 import { requireAdmin } from './_adminAuth.mjs';
 import { getSupabaseAdminClient } from './_supabaseAdmin.mjs';
 
-const isMissingTable = (error) =>
-  error?.code === 'PGRST205' || /could not find the table ['"]?public\.feedback/i.test(error?.message || '');
+const isMissingTable = (error) => {
+  const text = [error?.code, error?.message, error?.details, error?.hint].filter(Boolean).join(' ');
+  return /PGRST205|schema cache|could not find the table|relation .*feedback.* does not exist/i.test(text);
+};
 
 const fromSettingsValue = (key, value, updatedAt) => {
   const data = value && typeof value === 'object' ? value : {};

@@ -3,8 +3,10 @@ import { getSupabaseAdminClient } from './_supabaseAdmin.mjs';
 
 const RECOMMEND_VALUES = ['yes', 'no', 'maybe'];
 
-const isMissingTable = (error) =>
-  error?.code === 'PGRST205' || /could not find the table ['"]?public\.feedback/i.test(error?.message || '');
+const isMissingTable = (error) => {
+  const text = [error?.code, error?.message, error?.details, error?.hint].filter(Boolean).join(' ');
+  return /PGRST205|schema cache|could not find the table|relation .*feedback.* does not exist/i.test(text);
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

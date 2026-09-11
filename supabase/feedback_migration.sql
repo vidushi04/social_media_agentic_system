@@ -14,3 +14,6 @@ create table if not exists public.feedback (
 
 alter table public.feedback enable row level security;
 -- No anon policies: inserts go through /api/feedback-submit (service role).
+
+create index if not exists feedback_created_at_idx
+  on public.feedback (created_at desc);

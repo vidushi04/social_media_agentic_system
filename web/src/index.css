@@ -1216,25 +1216,6 @@ button.btn-secondary:hover {
   background: #ffffff;
 }
 
-.chat-analysis-plus {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  border-radius: 16px;
-  background: #f2f2f2;
-  color: #0f0f0f;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.chat-analysis-plus:hover {
-  background: #ececec;
-}
-
 .chat-analysis-input {
   flex: 1;
   min-width: 0;
@@ -2596,7 +2577,6 @@ button.btn-secondary:hover {
 .studio-chip:active:not(:disabled),
 .chat-analysis-pill:active:not(:disabled),
 .chat-analysis-icon-btn:active,
-.chat-analysis-plus:active,
 .chat-analysis-send:active:not(:disabled),
 .dev-tab:active,
 .studio-menu-btn:active,

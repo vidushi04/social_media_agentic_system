@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowRight, ChevronRight, CircleX, Menu, Pencil, Plus } from 'lucide-react';
+import { ArrowRight, ChevronRight, CircleX, Menu, Pencil } from 'lucide-react';
 import type { AnalysisRecord } from '../utils/knowledgeBase';
 import { getAnalysisHistory } from '../utils/knowledgeBase';
 import {
@@ -362,9 +362,6 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({
 
         <form className="chat-analysis-footer" onSubmit={handleSubmit}>
           <div className="chat-analysis-input-row">
-            <button type="button" className="chat-analysis-plus" aria-label="Add">
-              <Plus size={16} />
-            </button>
             <textarea
               ref={inputRef}
               className="chat-analysis-input"
