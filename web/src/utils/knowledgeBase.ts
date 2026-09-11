@@ -206,13 +206,19 @@ export const buildKnowledgeBaseMarkdown = (history: AnalysisRecord[]): string =>
   return `${header}${entries.join('')}`;
 };
 
-export const buildHistoricalContext = async (maxItems = 5): Promise<string> => {
+export const buildHistoricalContext = async (
+  maxItems = 5,
+  options?: { excludeId?: string }
+): Promise<string> => {
   const history = await getAnalysisHistory();
-  if (!history.length) {
+  const filtered = options?.excludeId
+    ? history.filter((entry) => entry.id !== options.excludeId)
+    : history;
+  if (!filtered.length) {
     return 'No historical creator analyses are available yet.';
   }
 
-  const recent = history.slice(-maxItems);
+  const recent = filtered.slice(-maxItems);
   return recent
     .map((entry, index) => {
       return [

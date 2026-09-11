@@ -15,6 +15,7 @@ interface DashboardProps {
   topContent?: TopContentItem[];
   onReset: () => void;
   onGoToAgents?: () => void;
+  onChatWithAnalysis?: () => void;
 }
 
 // Splits a long-form paragraph into short bullet points so it reads as
@@ -35,6 +36,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   topContent = [],
   onReset,
   onGoToAgents,
+  onChatWithAnalysis,
 }) => {
   if (!skillData) return null;
 
@@ -112,6 +114,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="studio-skills-col">
+          <button type="button" className="studio-chat-analysis-btn" onClick={onChatWithAnalysis}>
+            <Sparkles size={18} />
+            <span>Chat with Analysis</span>
+          </button>
+
           <div className="studio-diagnosis-card">
             <div className="studio-icon-row">
               <Sparkles size={24} className="studio-icon-accent" />

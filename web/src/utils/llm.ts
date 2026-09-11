@@ -3,8 +3,10 @@ import {
   DECONSTRUCTOR_PROMPT,
   AUDIENCE_READER_PROMPT,
   PATTERN_DETECTOR_PROMPT,
-  COACH_PROMPT
+  COACH_PROMPT,
+  CHAT_WITH_ANALYSIS_PROMPT,
 } from '../agents/prompts';
+import type { ChatMessage } from './chatAnalysis';
 
 const GEMINI_MODEL = 'gemini-2.5-pro';
 
@@ -161,4 +163,80 @@ export const runCoach = async (apiKey: string, patternData: any, historicalConte
       try_this: { type: Type.STRING, description: "A specific, concrete suggestion for their next post" }
     },
   });
+};
+
+type GeminiChatContent = { role: 'user' | 'model'; text: string };
+
+const MAX_CHAT_TURNS = 12;
+
+const generateText = async (
+  apiKey: string,
+  systemInstruction: string,
+  contents: GeminiChatContent[]
+): Promise<string> => {
+  const text = await scheduleGeminiRequest(async () => {
+    if (apiKey.trim()) {
+      const ai = getAI(apiKey.trim());
+      const response = await ai.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: contents.map((item) => ({
+          role: item.role,
+          parts: [{ text: item.text }],
+        })),
+        config: { systemInstruction },
+      });
+      return response.text || '';
+    }
+
+    const res = await fetch('/api/gemini-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ systemInstruction, messages: contents }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || 'Gemini chat request failed.');
+    }
+    return data.text || '';
+  });
+
+  const trimmed = text.trim();
+  if (!trimmed) {
+    throw new Error('The analysis agent returned an empty reply. Please try again.');
+  }
+  return trimmed;
+};
+
+export const runChatWithAnalysisAgent = async (
+  apiKey: string,
+  packet: unknown,
+  historicalContext: string,
+  messages: ChatMessage[]
+): Promise<string> => {
+  const recent = messages
+    .filter((message) => message.text.trim())
+    .slice(-MAX_CHAT_TURNS);
+
+  if (!recent.length || recent[recent.length - 1].role !== 'user') {
+    throw new Error('Send a question about this analysis first.');
+  }
+
+  const packetBlock = [
+    'Current analysis packet:',
+    JSON.stringify(packet),
+    '',
+    'Historical analyses (optional):',
+    historicalContext || 'No historical creator analyses are available yet.',
+  ].join('\n');
+
+  const contents: GeminiChatContent[] = [
+    { role: 'user', text: packetBlock },
+    { role: 'model', text: 'I have the analysis packet. Ask your question about this video analysis.' },
+    ...recent.map((message) => ({
+      role: (message.role === 'assistant' ? 'model' : 'user') as 'user' | 'model',
+      text: message.text,
+    })),
+  ];
+
+  return generateText(apiKey, CHAT_WITH_ANALYSIS_PROMPT, contents);
 };

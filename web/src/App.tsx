@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { Search, Menu, BarChart3, PlaySquare, Users, User, MessageSquare, LogOut } from 'lucide-react';
 import type { OrchestratorState } from './agents/Orchestrator';
@@ -11,6 +11,7 @@ import { AccessGateScreen } from './components/AccessGateScreen';
 import { YoutubeHandlePrompt } from './components/YoutubeHandlePrompt';
 import { FeedbackModal } from './components/FeedbackModal';
 import { FeatureOnboardingModal } from './components/FeatureOnboardingModal';
+import { ChatWithAnalysisPanel } from './components/ChatWithAnalysisPanel';
 import { getAnalysisHistory, deleteAnalysisFromHistory, type AnalysisRecord } from './utils/knowledgeBase';
 import { fetchAppSettings } from './utils/appSettings';
 import {
@@ -60,6 +61,7 @@ function App() {
   const [errorMsg, setErrorMsg] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [onboardingClosed, setOnboardingClosed] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
 
@@ -88,6 +90,7 @@ function App() {
 
     setErrorMsg('');
     setSelectedHistory(null);
+    setIsChatOpen(false);
     setIsProcessing(true);
     try {
       const settings = await fetchAppSettings();
@@ -112,6 +115,26 @@ function App() {
   const activeMetrics = selectedHistory?.dataCollector || orchestratorState?.agents.data_collector.output;
   const activeVideoUrl = selectedHistory?.videoUrl || url;
 
+  const activeAnalysisRecord = useMemo<AnalysisRecord | null>(() => {
+    if (!activeSkill) return null;
+    if (selectedHistory) return selectedHistory;
+    const latestMatch = [...analysisHistory]
+      .reverse()
+      .find((entry) => entry.videoUrl === url && entry.coach);
+    if (latestMatch) return latestMatch;
+    if (!orchestratorState?.finalSkill) return null;
+    return {
+      id: `live:${url}`,
+      timestamp: 'live',
+      videoUrl: url,
+      dataCollector: orchestratorState.agents.data_collector.output,
+      deconstructor: orchestratorState.agents.deconstructor.output,
+      audience: orchestratorState.agents.audience.output,
+      pattern: orchestratorState.agents.pattern.output,
+      coach: orchestratorState.finalSkill,
+    };
+  }, [activeSkill, selectedHistory, analysisHistory, url, orchestratorState]);
+
   const topContent = [...analysisHistory]
     .reverse()
     .slice(0, 3)
@@ -125,6 +148,7 @@ function App() {
     setErrorMsg('');
     setSelectedHistory(null);
     setOrchestratorState(null);
+    setIsChatOpen(false);
     setView('dashboard');
     if (isMobileView) setIsSidebarOpen(false);
   };
@@ -137,6 +161,7 @@ function App() {
   const handleSelectHistory = (entry: AnalysisRecord) => {
     setSelectedHistory(entry);
     setUrl(entry.videoUrl);
+    setIsChatOpen(false);
     setView('dashboard');
   };
 
@@ -229,6 +254,13 @@ function App() {
         userId={!isLocalMode ? user?.id : undefined}
         userEmail={!isLocalMode ? (profile?.email || user?.email || undefined) : undefined}
       />
+      {isChatOpen && activeAnalysisRecord && (
+        <ChatWithAnalysisPanel
+          key={activeAnalysisRecord.id}
+          record={activeAnalysisRecord}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
       <header className="studio-topbar">
         <div className="studio-topbar-left">
           <button
@@ -397,6 +429,7 @@ function App() {
                       topContent={topContent}
                       onReset={handleResetToEmptyState}
                       onGoToAgents={() => setView('agents')}
+                      onChatWithAnalysis={() => setIsChatOpen(true)}
                     />
                   </>
                 ) : (
