@@ -2,6 +2,29 @@ import React from 'react';
 import { Eye, MessageSquare, ThumbsUp, TrendingUp, Sparkles, Lightbulb, ListChecks, Star } from 'lucide-react';
 import { getThumbnailFromUrl } from '../utils/thumbnail';
 
+const AstroidIcon = ({ size = 18 }: { size?: number }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="url(#astroid-gradient)"
+    stroke="url(#astroid-gradient)"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <defs>
+      <linearGradient id="astroid-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#e32140" />
+        <stop offset="100%" stopColor="#d1148f" />
+      </linearGradient>
+    </defs>
+    <path d="M12.983 21.186a1 1 0 0 1-1.966 0 10 10 0 0 0-8.203-8.203 1 1 0 0 1 0-1.966 10 10 0 0 0 8.203-8.203 1 1 0 0 1 1.966 0 10 10 0 0 0 8.203 8.203 1 1 0 0 1 0 1.966 10 10 0 0 0-8.203 8.203" />
+  </svg>
+);
+
 interface TopContentItem {
   title: string;
   views: string;
@@ -115,7 +138,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="studio-skills-col">
           <button type="button" className="studio-chat-analysis-btn" onClick={onChatWithAnalysis}>
-            <Sparkles size={18} />
+            <AstroidIcon size={18} />
             <span>Chat with Analysis</span>
           </button>
 
