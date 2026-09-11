@@ -86,7 +86,10 @@ function App() {
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url.trim()) return;
+    if (!url.trim()) {
+      setErrorMsg('Paste a YouTube URL to analyze.');
+      return;
+    }
 
     setErrorMsg('');
     setSelectedHistory(null);
@@ -403,7 +406,7 @@ function App() {
                     onChange={(e) => setUrl(e.target.value)}
                     disabled={isProcessing}
                   />
-                  <button type="submit" className="btn-gradient" disabled={isProcessing || !url.trim()}>
+                  <button type="submit" className="btn-gradient" disabled={isProcessing}>
                     {isProcessing ? 'Analyzing...' : 'Analyze'}
                   </button>
                 </div>
