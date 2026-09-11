@@ -254,13 +254,17 @@ function App() {
         userId={!isLocalMode ? user?.id : undefined}
         userEmail={!isLocalMode ? (profile?.email || user?.email || undefined) : undefined}
       />
-      {isChatOpen && activeAnalysisRecord && (
-        <ChatWithAnalysisPanel
-          key={activeAnalysisRecord.id}
-          record={activeAnalysisRecord}
-          onClose={() => setIsChatOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {isChatOpen && activeAnalysisRecord && (
+          <ChatWithAnalysisPanel
+            key={activeAnalysisRecord.id}
+            record={activeAnalysisRecord}
+            onClose={() => setIsChatOpen(false)}
+            greetingName={isLocalMode ? undefined : (profile?.youtube_username || undefined)}
+            onResetAnalysis={handleResetToEmptyState}
+          />
+        )}
+      </AnimatePresence>
       <header className="studio-topbar">
         <div className="studio-topbar-left">
           <button

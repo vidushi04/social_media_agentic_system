@@ -1,37 +1,95 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Send, Sparkles, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ArrowRight, ChevronRight, CircleX, Menu, Pencil, Plus } from 'lucide-react';
 import type { AnalysisRecord } from '../utils/knowledgeBase';
 import { buildHistoricalContext } from '../utils/knowledgeBase';
-import { buildChatAnalysisPacket, type ChatMessage } from '../utils/chatAnalysis';
+import {
+  buildChatAnalysisPacket,
+  getChatConversations,
+  saveChatConversation,
+  type ChatConversation,
+  type ChatMessage,
+} from '../utils/chatAnalysis';
 import { runChatWithAnalysisAgent } from '../utils/llm';
 
 interface ChatWithAnalysisPanelProps {
   record: AnalysisRecord;
   onClose: () => void;
+  greetingName?: string;
+  onResetAnalysis?: () => void;
 }
 
-const SUGGESTED_QUESTIONS = [
-  'Why this skill?',
-  'What did viewers say?',
-  'Compare to my last video.',
+const INITIAL_SUGGESTIONS = [
+  'Why did you recommend this micro-skill?',
+  'What in the comments supports this diagnosis?',
+  'How does this compare to my last video?',
+  'What should I try in the title next time?',
+];
+
+const MORE_SUGGESTIONS = [
+  'What should I do next?',
+  'Summarize this analysis.',
+  'What is the strongest audience signal?',
 ];
 
 const MAX_QUESTION_LENGTH = 2000;
+
+const formatChatTime = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+};
 
 const makeId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : `chat-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({ record, onClose }) => {
+export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({
+  record,
+  onClose,
+  greetingName,
+  onResetAnalysis,
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
   const [historyContext, setHistoryContext] = useState('No historical creator analyses are available yet.');
+  const [showMoreSuggestions, setShowMoreSuggestions] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [conversations, setConversations] = useState<ChatConversation[]>(() =>
+    getChatConversations(record.id)
+  );
+  const [conversationId, setConversationId] = useState(makeId);
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const sendingRef = useRef(false);
+
+  const suggestions = showMoreSuggestions
+    ? [...INITIAL_SUGGESTIONS, ...MORE_SUGGESTIONS]
+    : INITIAL_SUGGESTIONS;
+  const greeting = greetingName ? `Hello, ${greetingName}` : 'Hello';
+
+  const persistConversation = (nextMessages: ChatMessage[], id = conversationId) => {
+    saveChatConversation(record.id, {
+      id,
+      title: '',
+      messages: nextMessages,
+      updatedAt: new Date().toISOString(),
+    });
+    setConversations(getChatConversations(record.id));
+  };
+
+  const closeDrawer = () => {
+    persistConversation(messages);
+    onClose();
+  };
+
+  const handleTrellisClick = () => {
+    persistConversation(messages);
+    (onResetAnalysis || onClose)();
+  };
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -39,11 +97,17 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({ re
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape') return;
+      if (isHistoryOpen) {
+        setIsHistoryOpen(false);
+        return;
+      }
+      persistConversation(messages);
+      onClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  }, [onClose, isHistoryOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +125,34 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({ re
     node.scrollTop = node.scrollHeight;
   }, [messages, isSending]);
 
+  const startNewConversation = () => {
+    if (sendingRef.current) return;
+    persistConversation(messages);
+    setConversationId(makeId());
+    setMessages([]);
+    setDraft('');
+    setError('');
+    setShowMoreSuggestions(false);
+    setIsHistoryOpen(false);
+    inputRef.current?.focus();
+  };
+
+  const openHistory = () => {
+    setConversations(getChatConversations(record.id));
+    setIsHistoryOpen((open) => !open);
+  };
+
+  const loadConversation = (conversation: ChatConversation) => {
+    if (sendingRef.current) return;
+    persistConversation(messages);
+    setConversationId(conversation.id);
+    setMessages(conversation.messages);
+    setDraft('');
+    setError('');
+    setShowMoreSuggestions(false);
+    setIsHistoryOpen(false);
+  };
+
   const sendThread = async (nextMessages: ChatMessage[]) => {
     sendingRef.current = true;
     setError('');
@@ -68,16 +160,17 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({ re
     try {
       const packet = buildChatAnalysisPacket(record);
       const answer = await runChatWithAnalysisAgent('', packet, historyContext, nextMessages);
-      setMessages([
-        ...nextMessages,
-        {
-          id: makeId(),
-          role: 'assistant',
-          text: answer,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      const reply: ChatMessage = {
+        id: makeId(),
+        role: 'assistant',
+        text: answer,
+        createdAt: new Date().toISOString(),
+      };
+      const withReply = [...nextMessages, reply];
+      setMessages(withReply);
+      persistConversation(withReply);
     } catch (err) {
+      persistConversation(nextMessages);
       setError(err instanceof Error ? err.message : 'Could not get a reply. Please try again.');
     }
     sendingRef.current = false;
@@ -89,6 +182,7 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({ re
     if (!text || sendingRef.current) return;
     sendingRef.current = true;
     if (text.length > MAX_QUESTION_LENGTH) {
+      sendingRef.current = false;
       setError(`Keep questions under ${MAX_QUESTION_LENGTH} characters.`);
       return;
     }
@@ -132,34 +226,106 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({ re
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal-content chat-analysis-modal"
+    <motion.div
+      className="chat-analysis-layer"
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+    >
+      <motion.div
+        className="chat-analysis-scrim"
+        variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+        transition={{ duration: 0.2 }}
+        onClick={closeDrawer}
+      />
+      <motion.aside
+        className="chat-analysis-drawer"
         role="dialog"
         aria-modal="true"
         aria-labelledby="chat-analysis-title"
-        onClick={(e) => e.stopPropagation()}
+        variants={{ hidden: { x: '100%' }, visible: { x: 0 } }}
+        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="chat-analysis-top">
-          <div className="chat-analysis-heading">
-            <Sparkles size={18} />
-            <h2 id="chat-analysis-title">Chat with Analysis</h2>
+        <div className="chat-analysis-header">
+          <div className="chat-analysis-header-left">
+            <button
+              type="button"
+              className="chat-analysis-icon-btn"
+              aria-label="Chat history"
+              aria-expanded={isHistoryOpen}
+              onClick={openHistory}
+            >
+              <Menu size={20} />
+            </button>
+            <div className="chat-analysis-brand">
+              <span>Ask</span>
+              <button
+                type="button"
+                className="chat-analysis-brand-logo"
+                id="chat-analysis-title"
+                onClick={handleTrellisClick}
+                aria-label="Start a new analysis"
+              >
+                Trellis
+              </button>
+            </div>
           </div>
-          <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Close">
-            <X size={20} />
-          </button>
+          <div className="chat-analysis-header-right">
+            <button
+              type="button"
+              className="chat-analysis-icon-btn"
+              onClick={startNewConversation}
+              aria-label="Start a new conversation"
+            >
+              <Pencil size={20} />
+            </button>
+            <button
+              type="button"
+              className="chat-analysis-icon-btn"
+              onClick={closeDrawer}
+              aria-label="Close"
+            >
+              <CircleX size={20} />
+            </button>
+          </div>
         </div>
 
-        <div className="chat-analysis-thread" ref={threadRef}>
+        <div className="chat-analysis-divider" />
+
+        <div className={`chat-analysis-thread ${messages.length > 0 ? 'has-messages' : ''}`} ref={threadRef}>
           {messages.length === 0 && (
-            <div className="chat-analysis-empty">
-              <p>Ask anything about this analysis — the diagnosis, the skill, or the comments.</p>
-              <div className="chat-analysis-chips">
-                {SUGGESTED_QUESTIONS.map((question) => (
+            <div className="chat-analysis-greeting">
+              <p className="chat-analysis-hello">{greeting}</p>
+              <p className="chat-analysis-help">How can I help you?</p>
+            </div>
+          )}
+
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`chat-analysis-row ${message.role === 'user' ? 'user' : 'assistant'}`}
+            >
+              <div className={`chat-analysis-bubble ${message.role === 'user' ? 'user' : 'assistant'}`}>
+                {message.text}
+              </div>
+              <p className="chat-analysis-time">{formatChatTime(message.createdAt)}</p>
+            </div>
+          ))}
+
+          {isSending && (
+            <div className="chat-analysis-row assistant">
+              <div className="chat-analysis-bubble assistant pending">Thinking…</div>
+            </div>
+          )}
+
+          {messages.length === 0 && !isSending && (
+            <div className="chat-analysis-suggestions">
+              <div className="chat-analysis-pills">
+                {suggestions.map((question) => (
                   <button
                     key={question}
                     type="button"
-                    className="chat-analysis-chip"
+                    className="chat-analysis-pill"
                     disabled={isSending}
                     onClick={() => void sendQuestion(question)}
                   >
@@ -167,20 +333,17 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({ re
                   </button>
                 ))}
               </div>
+              {!showMoreSuggestions && (
+                <button
+                  type="button"
+                  className="chat-analysis-more"
+                  onClick={() => setShowMoreSuggestions(true)}
+                >
+                  More suggestions
+                  <ChevronRight size={14} />
+                </button>
+              )}
             </div>
-          )}
-
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`chat-analysis-bubble ${message.role === 'user' ? 'user' : 'assistant'}`}
-            >
-              {message.text}
-            </div>
-          ))}
-
-          {isSending && (
-            <div className="chat-analysis-bubble assistant pending">Thinking…</div>
           )}
         </div>
 
@@ -193,29 +356,93 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({ re
           </div>
         )}
 
-        <form className="chat-analysis-composer" onSubmit={handleSubmit}>
-          <textarea
-            ref={inputRef}
-            className="chat-analysis-input"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleComposerKeyDown}
-            placeholder="Ask about this analysis"
-            rows={1}
-            disabled={isSending}
-            maxLength={MAX_QUESTION_LENGTH}
-          />
-          <button
-            type="submit"
-            className="onboarding-next chat-analysis-send"
-            disabled={isSending || !draft.trim()}
-            aria-label="Send"
-          >
-            <Send size={14} />
-            Send
-          </button>
+        <div className="chat-analysis-divider" />
+
+        <form className="chat-analysis-footer" onSubmit={handleSubmit}>
+          <div className="chat-analysis-input-row">
+            <button type="button" className="chat-analysis-plus" aria-label="Add">
+              <Plus size={16} />
+            </button>
+            <textarea
+              ref={inputRef}
+              className="chat-analysis-input"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleComposerKeyDown}
+              placeholder="Ask something"
+              rows={1}
+              disabled={isSending}
+              maxLength={MAX_QUESTION_LENGTH}
+            />
+            <button
+              type="submit"
+              className="chat-analysis-send"
+              disabled={isSending || !draft.trim()}
+              aria-label="Send"
+            >
+              <ArrowRight size={16} />
+            </button>
+          </div>
+          <p className="chat-analysis-disclaimer">
+            AI can make mistakes. You are responsible for the content you publish.{' '}
+            <span className="link">Learn more</span>
+          </p>
         </form>
-      </div>
-    </div>
+
+        <AnimatePresence>
+          {isHistoryOpen && (
+            <>
+              <motion.button
+                key="history-scrim"
+                type="button"
+                className="chat-analysis-history-scrim"
+                aria-label="Close chat history"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                onClick={() => setIsHistoryOpen(false)}
+              />
+              <motion.div
+                key="history-panel"
+                className="chat-analysis-history"
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="chat-analysis-history-header">
+                  <p>Chat history</p>
+                  <button
+                    type="button"
+                    className="chat-analysis-icon-btn"
+                    onClick={() => setIsHistoryOpen(false)}
+                    aria-label="Close chat history"
+                  >
+                    <CircleX size={20} />
+                  </button>
+                </div>
+                <div className="chat-analysis-history-list">
+                  {conversations.length === 0 ? (
+                    <p className="chat-analysis-history-empty">No conversations yet.</p>
+                  ) : (
+                    conversations.map((conversation) => (
+                      <button
+                        key={conversation.id}
+                        type="button"
+                        className={`chat-analysis-history-item ${conversation.id === conversationId ? 'active' : ''}`}
+                        onClick={() => loadConversation(conversation)}
+                      >
+                        {conversation.title}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </motion.aside>
+    </motion.div>
   );
 };
