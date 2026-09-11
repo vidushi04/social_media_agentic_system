@@ -1,9 +1,12 @@
 // Server-side proxy for multi-turn Gemini chat (plain text).
 // The analysis pipeline stays on /api/gemini (JSON-only).
 
-const GEMINI_MODEL = 'gemini-2.5-pro';
+const GEMINI_MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
 const MAX_MESSAGES = 16;
-const MAX_TEXT_LENGTH = 12000;
+const MAX_TEXT_LENGTH = 32000;
+
+const isRetryableGeminiError = (status, message) =>
+  status === 503 || /high demand|overloaded|unavailable|try again later/i.test(message || '');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -41,26 +44,39 @@ export default async function handler(req, res) {
     });
   }
 
-  try {
-    const upstream = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: { parts: [{ text: systemInstruction }] },
-        }),
-      }
-    );
+  const payload = JSON.stringify({
+    contents,
+    systemInstruction: { parts: [{ text: systemInstruction }] },
+  });
 
-    const data = await upstream.json();
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({ error: data?.error?.message || 'Gemini request failed.' });
+  try {
+    let lastStatus = 502;
+    let lastMessage = 'Gemini request failed.';
+
+    for (const model of GEMINI_MODELS) {
+      const upstream = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+        }
+      );
+
+      const data = await upstream.json();
+      if (upstream.ok) {
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        return res.status(200).json({ text });
+      }
+
+      lastStatus = upstream.status;
+      lastMessage = data?.error?.message || 'Gemini request failed.';
+      if (!isRetryableGeminiError(upstream.status, lastMessage)) {
+        return res.status(upstream.status).json({ error: lastMessage });
+      }
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return res.status(200).json({ text });
+    return res.status(lastStatus).json({ error: lastMessage });
   } catch {
     return res.status(502).json({ error: 'Failed to reach the Gemini API.' });
   }

@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, ChevronRight, CircleX, Menu, Pencil, Plus } from 'lucide-react';
 import type { AnalysisRecord } from '../utils/knowledgeBase';
-import { buildHistoricalContext } from '../utils/knowledgeBase';
+import { getAnalysisHistory } from '../utils/knowledgeBase';
 import {
   buildChatAnalysisPacket,
+  formatChatHistoricalContext,
   getChatConversations,
   saveChatConversation,
   type ChatConversation,
@@ -111,8 +112,10 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    buildHistoricalContext(3, { excludeId: record.id }).then((context) => {
-      if (!cancelled) setHistoryContext(context);
+    getAnalysisHistory().then((history) => {
+      if (cancelled) return;
+      const recent = history.filter((entry) => entry.id !== record.id).slice(-3);
+      setHistoryContext(formatChatHistoricalContext(recent));
     });
     return () => {
       cancelled = true;

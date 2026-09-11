@@ -85,3 +85,10 @@ export const buildChatAnalysisPacket = (record: AnalysisRecord) => {
     coach: record.coach ?? null,
   };
 };
+
+export const formatChatHistoricalContext = (records: AnalysisRecord[]): string => {
+  if (!records.length) return 'No historical creator analyses are available yet.';
+  return records
+    .map((entry, index) => `Historical Analysis ${index + 1}:\n${JSON.stringify(buildChatAnalysisPacket(entry))}`)
+    .join('\n\n');
+};

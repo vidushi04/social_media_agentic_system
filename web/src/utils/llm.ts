@@ -195,7 +195,12 @@ const generateText = async (
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(data?.error || 'Gemini chat request failed.');
+      const serverError = typeof data?.error === 'string' ? data.error : '';
+      if (serverError) throw new Error(serverError);
+      if (res.status === 404) {
+        throw new Error('Chat is not available on this local server. Restart the Vite app so /api/gemini-chat can load.');
+      }
+      throw new Error('Gemini chat request failed.');
     }
     return data.text || '';
   });
