@@ -1,6 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { getSupabaseAdminClient } from './_supabaseAdmin.mjs';
 
 const RECOMMEND_VALUES = ['yes', 'no', 'maybe'];
+
+const isMissingTable = (error) =>
+  error?.code === 'PGRST205' || /could not find the table ['"]?public\.feedback/i.test(error?.message || '');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -23,7 +27,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'would_recommend must be "yes", "no", or "maybe".' });
   }
 
-  const { error: insertError } = await supabase.from('feedback').insert({
+  const row = {
     user_id: typeof user_id === 'string' && user_id ? user_id : null,
     email: typeof email === 'string' && email.trim() ? email.trim().slice(0, 200) : null,
     rating: ratingNum,
@@ -36,10 +40,32 @@ export default async function handler(req, res) {
         ? improvement_suggestion.trim().slice(0, 2000)
         : null,
     would_recommend,
+  };
+
+  const { error: insertError } = await supabase.from('feedback').insert(row);
+
+  if (!insertError) {
+    return res.status(201).json({ ok: true, message: 'Thanks for the feedback!' });
+  }
+
+  if (!isMissingTable(insertError)) {
+    return res.status(502).json({ error: insertError.message });
+  }
+
+  // The dedicated table is not in this project yet. Persist to app_settings so
+  // submissions still land in Supabase until feedback_migration.sql is applied.
+  const id = randomUUID();
+  const { error: fallbackError } = await supabase.from('app_settings').insert({
+    key: `feedback:${id}`,
+    value: { id, ...row, created_at: new Date().toISOString() },
   });
 
-  if (insertError) {
-    return res.status(502).json({ error: insertError.message });
+  if (fallbackError) {
+    return res.status(502).json({
+      error:
+        fallbackError.message ||
+        'Could not save feedback. Run supabase/feedback_migration.sql in the Supabase SQL Editor.',
+    });
   }
 
   return res.status(201).json({ ok: true, message: 'Thanks for the feedback!' });

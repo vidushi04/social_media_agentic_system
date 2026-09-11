@@ -89,7 +89,8 @@ export const localVercelApi = (apiDir: string, env: Record<string, string>): Plu
 
         const vercelReq = Object.assign(req, { body, query });
         const vercelRes = attachVercelHelpers(res);
-        const mod = await import(pathToFileURL(filePath).href);
+        const fileUrl = `${pathToFileURL(filePath).href}?t=${existsSync(filePath) ? Date.now() : 0}`;
+        const mod = await import(fileUrl);
         if (typeof mod.default !== 'function') {
           throw new Error('Invalid API handler.');
         }

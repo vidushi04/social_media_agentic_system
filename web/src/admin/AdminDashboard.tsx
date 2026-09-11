@@ -4,6 +4,7 @@ import {
   fetchAdminUserAnalyses,
   fetchAdminAnalytics,
   fetchAdminAccessRequests,
+  fetchAdminFeedback,
   reviewAdminAccessRequest,
   updateAdminUserAccess,
   fetchAdminSettings,
@@ -16,6 +17,7 @@ import {
   type AdminAnalyticsSummary,
   type AdminAnalysisRow,
   type AdminAccessRequest,
+  type AdminFeedbackRow,
 } from './adminApi';
 import { isWaitlistEnabled } from '../config/waitlist';
 
@@ -26,6 +28,7 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onUnauthorized }) => {
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [accessRequests, setAccessRequests] = useState<AdminAccessRequest[]>([]);
+  const [feedback, setFeedback] = useState<AdminFeedbackRow[]>([]);
   const [analytics, setAnalytics] = useState<AdminAnalyticsSummary | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUserSummary | null>(null);
   const [userAnalyses, setUserAnalyses] = useState<AdminAnalysisRow[]>([]);
@@ -49,16 +52,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onUnauthorized }
     setLoading(true);
     setError('');
     try {
-      const [usersData, analyticsData, requestsData, settingsData] = await Promise.all([
+      const [usersData, analyticsData, requestsData, settingsData, feedbackData] = await Promise.all([
         fetchAdminUsers(),
         fetchAdminAnalytics(),
         isWaitlistEnabled ? fetchAdminAccessRequests('pending') : Promise.resolve([]),
         fetchAdminSettings(),
+        fetchAdminFeedback(),
       ]);
       setUsers(usersData);
       setAnalytics(analyticsData);
       setAccessRequests(requestsData);
       setGlobalMockMode(settingsData.mock_mode_enabled);
+      setFeedback(feedbackData);
     } catch (err) {
       handleError(err);
     }
@@ -233,6 +238,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onUnauthorized }
               )}
             </div>
             )}
+
+            <div className="studio-perf-card" style={{ marginBottom: '1.5rem' }}>
+              <h3 className="studio-perf-title">Feedback ({feedback.length})</h3>
+              {feedback.length === 0 ? (
+                <p style={{ color: 'var(--mute)', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+                  No feedback submitted yet.
+                </p>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.75rem' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', fontSize: '0.8rem', color: 'var(--mute)' }}>
+                      <th style={{ padding: '0.5rem' }}>When</th>
+                      <th style={{ padding: '0.5rem' }}>Email</th>
+                      <th style={{ padding: '0.5rem' }}>Rating</th>
+                      <th style={{ padding: '0.5rem' }}>Recommend</th>
+                      <th style={{ padding: '0.5rem' }}>Most useful</th>
+                      <th style={{ padding: '0.5rem' }}>Improve</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {feedback.map((item) => (
+                      <tr key={item.id} style={{ borderTop: '1px solid var(--studio-border)', verticalAlign: 'top' }}>
+                        <td style={{ padding: '0.5rem', whiteSpace: 'nowrap' }}>
+                          {new Date(item.created_at).toLocaleString()}
+                        </td>
+                        <td style={{ padding: '0.5rem' }}>{item.email || '—'}</td>
+                        <td style={{ padding: '0.5rem' }}>{item.rating ?? '—'}</td>
+                        <td style={{ padding: '0.5rem' }}>{item.would_recommend || '—'}</td>
+                        <td style={{ padding: '0.5rem' }}>{item.most_useful_feature || '—'}</td>
+                        <td style={{ padding: '0.5rem' }}>{item.improvement_suggestion || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
 
             <div className="studio-perf-card">
               <h3 className="studio-perf-title">Users ({users.length})</h3>

@@ -14,6 +14,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
   const [rating, setRating] = useState(0);
   const [mostUsefulFeature, setMostUsefulFeature] = useState('');
   const [improvementSuggestion, setImprovementSuggestion] = useState('');
+  const [contactEmail, setContactEmail] = useState(userEmail || '');
   const [wouldRecommend, setWouldRecommend] = useState<Recommend | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -25,6 +26,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
     setRating(0);
     setMostUsefulFeature('');
     setImprovementSuggestion('');
+    setContactEmail(userEmail || '');
     setWouldRecommend(null);
     setError('');
     setSubmitted(false);
@@ -45,7 +47,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId || null,
-          email: userEmail || null,
+          email: (userEmail || contactEmail).trim() || null,
           rating,
           most_useful_feature: mostUsefulFeature,
           improvement_suggestion: improvementSuggestion,
@@ -144,6 +146,22 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, u
                 placeholder="Tell us what's missing or confusing..."
               />
             </div>
+
+            {!userEmail && (
+              <div>
+                <label className="feedback-modal-label" htmlFor="feedback-email">
+                  Email (optional)
+                </label>
+                <input
+                  id="feedback-email"
+                  type="email"
+                  className="text-input"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="so we can follow up if needed"
+                />
+              </div>
+            )}
 
             <div>
               <label className="feedback-modal-label">

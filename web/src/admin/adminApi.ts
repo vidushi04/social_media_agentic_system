@@ -52,6 +52,17 @@ export interface AdminAnalysisRow {
   created_at: string;
 }
 
+export interface AdminFeedbackRow {
+  id: string;
+  user_id: string | null;
+  email: string | null;
+  rating: number | null;
+  most_useful_feature: string | null;
+  improvement_suggestion: string | null;
+  would_recommend: string | null;
+  created_at: string;
+}
+
 export const adminLogin = async (password: string): Promise<void> => {
   await adminFetch('/api/admin-login', { method: 'POST', body: JSON.stringify({ password }) });
 };
@@ -117,6 +128,11 @@ export const updateAdminUserAccess = async (
       app_url: typeof window !== 'undefined' ? window.location.origin : undefined,
     }),
   });
+  return res.json();
+};
+
+export const fetchAdminFeedback = async (): Promise<AdminFeedbackRow[]> => {
+  const res = await adminFetch('/api/admin-feedback');
   return res.json();
 };
 

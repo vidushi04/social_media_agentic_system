@@ -48,6 +48,20 @@ create table if not exists public.analyses (
 create index if not exists analyses_user_id_created_at_idx
   on public.analyses (user_id, created_at desc);
 
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  email text,
+  rating smallint check (rating between 1 and 5),
+  most_useful_feature text,
+  improvement_suggestion text,
+  would_recommend text check (would_recommend in ('yes', 'no', 'maybe')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists feedback_created_at_idx
+  on public.feedback (created_at desc);
+
 -- ---------------------------------------------------------------------------
 -- Row-level security: every regular (anon-key) request is scoped to auth.uid().
 -- The service-role key used by the admin API bypasses RLS entirely by design.
@@ -56,6 +70,7 @@ create index if not exists analyses_user_id_created_at_idx
 alter table public.profiles enable row level security;
 alter table public.analyses enable row level security;
 alter table public.access_requests enable row level security;
+alter table public.feedback enable row level security;
 
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
