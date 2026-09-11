@@ -261,7 +261,6 @@ export const ChatWithAnalysisPanel: React.FC<ChatWithAnalysisPanelProps> = ({
               <Menu size={20} />
             </button>
             <div className="chat-analysis-brand">
-              <span>Ask</span>
               <button
                 type="button"
                 className="chat-analysis-brand-logo"

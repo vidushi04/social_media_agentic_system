@@ -992,14 +992,6 @@ button.btn-secondary:hover {
 .chat-analysis-brand {
   display: flex;
   align-items: center;
-  gap: 3px;
-}
-
-.chat-analysis-brand span {
-  font-size: 18px;
-  font-weight: 500;
-  color: #0d0d0d;
-  line-height: 1;
 }
 
 .chat-analysis-brand-logo {
