@@ -11,9 +11,32 @@ export interface VideoMetrics {
 }
 
 export const extractVideoId = (url: string): string | null => {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(withProtocol);
+    const host = parsed.hostname.replace(/^www\./i, '').replace(/^m\./i, '').toLowerCase();
+    const pathParts = parsed.pathname.split('/').filter(Boolean);
+    const fromQuery = parsed.searchParams.get('v');
+    const candidates = [
+      fromQuery,
+      host === 'youtu.be' ? pathParts[0] : undefined,
+      pathParts[0] === 'shorts' || pathParts[0] === 'embed' || pathParts[0] === 'live' || pathParts[0] === 'v'
+        ? pathParts[1]
+        : undefined,
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate && /^[\w-]{11}$/.test(candidate)) return candidate;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 };
 
 // With a manually entered key (settings modal) we call the YouTube API directly.
