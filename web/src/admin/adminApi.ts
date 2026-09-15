@@ -37,12 +37,15 @@ export interface AdminAccessRequest {
 export interface AdminAnalyticsSummary {
   total_users: number;
   total_analyses: number;
+  guest_analyses?: number;
   analyses_per_week: { week: string; count: number }[];
 }
 
 export interface AdminAnalysisRow {
   id: string;
-  user_id: string;
+  user_id: string | null;
+  user_email?: string | null;
+  is_guest?: boolean;
   video_url: string;
   data_collector: Record<string, unknown> | null;
   deconstructor: Record<string, unknown> | null;
@@ -78,6 +81,11 @@ export const fetchAdminUsers = async (): Promise<AdminUserSummary[]> => {
 
 export const fetchAdminUserAnalyses = async (userId: string): Promise<AdminAnalysisRow[]> => {
   const res = await adminFetch(`/api/admin-user-analyses?user_id=${encodeURIComponent(userId)}`);
+  return res.json();
+};
+
+export const fetchAdminAnalyses = async (): Promise<AdminAnalysisRow[]> => {
+  const res = await adminFetch('/api/admin-analyses');
   return res.json();
 };
 

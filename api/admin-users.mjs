@@ -28,6 +28,7 @@ export default async function handler(req, res) {
 
   const counts = new Map();
   for (const row of analyses) {
+    if (!row.user_id) continue;
     counts.set(row.user_id, (counts.get(row.user_id) || 0) + 1);
   }
 

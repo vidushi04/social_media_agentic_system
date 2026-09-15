@@ -35,7 +35,7 @@ create unique index if not exists access_requests_email_lower_idx
 
 create table if not exists public.analyses (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
   video_url text not null,
   data_collector jsonb,
   deconstructor jsonb,
@@ -47,6 +47,9 @@ create table if not exists public.analyses (
 
 create index if not exists analyses_user_id_created_at_idx
   on public.analyses (user_id, created_at desc);
+
+create index if not exists analyses_created_at_idx
+  on public.analyses (created_at desc);
 
 create table if not exists public.feedback (
   id uuid primary key default gen_random_uuid(),

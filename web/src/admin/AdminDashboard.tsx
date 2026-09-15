@@ -5,6 +5,7 @@ import {
   fetchAdminAnalytics,
   fetchAdminAccessRequests,
   fetchAdminFeedback,
+  fetchAdminAnalyses,
   reviewAdminAccessRequest,
   updateAdminUserAccess,
   fetchAdminSettings,
@@ -29,6 +30,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onUnauthorized }
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [accessRequests, setAccessRequests] = useState<AdminAccessRequest[]>([]);
   const [feedback, setFeedback] = useState<AdminFeedbackRow[]>([]);
+  const [allAnalyses, setAllAnalyses] = useState<AdminAnalysisRow[]>([]);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<AdminAnalysisRow | null>(null);
   const [analytics, setAnalytics] = useState<AdminAnalyticsSummary | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUserSummary | null>(null);
   const [userAnalyses, setUserAnalyses] = useState<AdminAnalysisRow[]>([]);
@@ -52,18 +55,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onUnauthorized }
     setLoading(true);
     setError('');
     try {
-      const [usersData, analyticsData, requestsData, settingsData, feedbackData] = await Promise.all([
+      const [usersData, analyticsData, requestsData, settingsData, feedbackData, analysesData] = await Promise.all([
         fetchAdminUsers(),
         fetchAdminAnalytics(),
         isWaitlistEnabled ? fetchAdminAccessRequests('pending') : Promise.resolve([]),
         fetchAdminSettings(),
         fetchAdminFeedback(),
+        fetchAdminAnalyses(),
       ]);
       setUsers(usersData);
       setAnalytics(analyticsData);
       setAccessRequests(requestsData);
       setGlobalMockMode(settingsData.mock_mode_enabled);
       setFeedback(feedbackData);
+      setAllAnalyses(analysesData);
     } catch (err) {
       handleError(err);
     }
@@ -173,6 +178,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onUnauthorized }
                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--mute)' }}>Total analyses</p>
                     <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ink)' }}>{analytics.total_analyses}</p>
                   </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--mute)' }}>Guest analyses</p>
+                    <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--ink)' }}>{analytics.guest_analyses ?? 0}</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -192,6 +201,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onUnauthorized }
                 />
                 {mockModeSaving ? 'Saving…' : globalMockMode ? 'Mock mode enabled (system-wide)' : 'Mock mode disabled (real APIs)'}
               </label>
+            </div>
+
+            <div className="studio-perf-card" style={{ marginBottom: '1.5rem' }}>
+              <h3 className="studio-perf-title">All analyses ({allAnalyses.length})</h3>
+              <p style={{ color: 'var(--mute)', fontSize: '0.85rem', margin: '0.5rem 0 0', lineHeight: 1.5 }}>
+                Every completed run, including guests in local mode.
+              </p>
+              {allAnalyses.length === 0 ? (
+                <p style={{ color: 'var(--mute)', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+                  No analyses yet.
+                </p>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.75rem' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', fontSize: '0.8rem', color: 'var(--mute)' }}>
+                      <th style={{ padding: '0.5rem' }}>When</th>
+                      <th style={{ padding: '0.5rem' }}>User</th>
+                      <th style={{ padding: '0.5rem' }}>Video</th>
+                      <th style={{ padding: '0.5rem' }}>Skill</th>
+                      <th style={{ padding: '0.5rem' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allAnalyses.map((item) => (
+                      <tr key={item.id} style={{ borderTop: '1px solid var(--studio-border)', verticalAlign: 'top' }}>
+                        <td style={{ padding: '0.5rem', whiteSpace: 'nowrap' }}>
+                          {new Date(item.created_at).toLocaleString()}
+                        </td>
+                        <td style={{ padding: '0.5rem' }}>
+                          {item.is_guest || !item.user_id ? 'Guest' : item.user_email || item.user_id}
+                        </td>
+                        <td style={{ padding: '0.5rem' }}>
+                          {(typeof item.data_collector?.title === 'string' && item.data_collector.title) || item.video_url}
+                        </td>
+                        <td style={{ padding: '0.5rem' }}>
+                          {(typeof item.coach?.skill === 'string' && item.coach.skill) || '—'}
+                        </td>
+                        <td style={{ padding: '0.5rem' }}>
+                          <button className="btn-secondary" type="button" onClick={() => setSelectedAnalysis(item)}>
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {isWaitlistEnabled && (
@@ -404,6 +460,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onUnauthorized }
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
               <button className="btn-secondary" onClick={() => setSelectedUser(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedAnalysis && (
+        <div className="modal-overlay" onClick={() => setSelectedAnalysis(null)}>
+          <div className="modal-content" style={{ maxWidth: '640px', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0, color: 'var(--ink)' }}>
+              {(typeof selectedAnalysis.data_collector?.title === 'string' && selectedAnalysis.data_collector.title) || 'Analysis'}
+            </h2>
+            <p style={{ color: 'var(--mute)', fontSize: '0.85rem' }}>
+              {selectedAnalysis.is_guest || !selectedAnalysis.user_id ? 'Guest' : selectedAnalysis.user_email || selectedAnalysis.user_id}
+              {' · '}
+              {new Date(selectedAnalysis.created_at).toLocaleString()}
+            </p>
+            <p style={{ fontSize: '0.85rem', wordBreak: 'break-all' }}>
+              <a href={selectedAnalysis.video_url} target="_blank" rel="noreferrer">{selectedAnalysis.video_url}</a>
+            </p>
+            <p style={{ fontWeight: 600 }}>
+              {(typeof selectedAnalysis.coach?.skill === 'string' && selectedAnalysis.coach.skill) || 'No skill recorded'}
+            </p>
+            {typeof selectedAnalysis.pattern?.observation === 'string' && (
+              <p style={{ fontSize: '0.9rem', color: 'var(--ink)', lineHeight: 1.5 }}>{selectedAnalysis.pattern.observation}</p>
+            )}
+            {typeof selectedAnalysis.coach?.try_this === 'string' && (
+              <p style={{ fontSize: '0.9rem', color: 'var(--mute)', lineHeight: 1.5 }}>{selectedAnalysis.coach.try_this}</p>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button className="btn-secondary" type="button" onClick={() => setSelectedAnalysis(null)}>Close</button>
             </div>
           </div>
         </div>

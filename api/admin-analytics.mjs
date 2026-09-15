@@ -14,13 +14,14 @@ export default async function handler(req, res) {
 
   const [{ count: totalUsers, error: usersError }, { data: analyses, error: analysesError }] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('analyses').select('created_at'),
+    supabase.from('analyses').select('created_at, user_id'),
   ]);
 
   if (usersError) return res.status(502).json({ error: usersError.message });
   if (analysesError) return res.status(502).json({ error: analysesError.message });
 
   const totalAnalyses = analyses.length;
+  const guestAnalyses = analyses.filter((row) => !row.user_id).length;
   const byWeek = new Map();
   for (const row of analyses) {
     const weekStart = new Date(row.created_at);
@@ -37,6 +38,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     total_users: totalUsers ?? 0,
     total_analyses: totalAnalyses,
+    guest_analyses: guestAnalyses,
     analyses_per_week: analysesPerWeek,
   });
 }

@@ -122,10 +122,14 @@ export const getAnalysisHistory = async (): Promise<AnalysisRecord[]> => {
 export const saveAnalysisToKnowledgeBase = async (
   record: Omit<AnalysisRecord, 'id'> & { id?: string }
 ): Promise<void> => {
+  const id = record.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `analysis-${Date.now()}`);
+  const saved: AnalysisRecord = { ...record, id };
+
   if (!isLocalStorageBackend()) {
     const userId = await getSupabaseUserId();
     if (userId) {
       const { error } = await supabase!.from('analyses').insert({
+        id,
         user_id: userId,
         video_url: record.videoUrl,
         data_collector: record.dataCollector,
@@ -138,10 +142,30 @@ export const saveAnalysisToKnowledgeBase = async (
     }
     return;
   }
-  saveAnalysisToKnowledgeBaseLocal({
-    ...record,
-    id: record.id || crypto.randomUUID(),
-  });
+
+  saveAnalysisToKnowledgeBaseLocal(saved);
+  void reportGuestAnalysis(saved);
+};
+
+const reportGuestAnalysis = async (record: AnalysisRecord): Promise<void> => {
+  try {
+    await fetch('/api/analysis-submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: record.id,
+        video_url: record.videoUrl,
+        data_collector: record.dataCollector,
+        deconstructor: record.deconstructor,
+        audience: record.audience,
+        pattern: record.pattern,
+        coach: record.coach,
+        created_at: record.timestamp,
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to report guest analysis to admin', error);
+  }
 };
 
 export const deleteAnalysisFromHistory = async (id: string): Promise<void> => {
